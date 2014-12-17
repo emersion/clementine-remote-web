@@ -1,0 +1,26 @@
+{
+  "name": "clementine-remote-web",
+  "version": "0.1.0",
+  "description": "A web interface for Clementine powered by Node.js",
+  "main": "index.js",
+  "scripts": {
+    "test": " "
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/emersion/clementine-remote-web.git"
+  },
+  "keywords": [
+    "clementine",
+    "music",
+    "player",
+    "node",
+    "remote"
+  ],
+  "author": "emersion",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/emersion/clementine-remote-web/issues"
+  },
+  "homepage": "https://github.com/emersion/clementine-remote-web"
+}
