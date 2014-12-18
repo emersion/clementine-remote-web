@@ -1,0 +1,6 @@
+{
+	"name": "Clementine",
+	"start_url": "index.html",
+	"display": "standalone",
+	"orientation": "portait"
+}

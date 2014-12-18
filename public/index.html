@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Clementine</title>
+
+	<meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+
+	<script src="/components/webcomponentsjs/webcomponents.js"></script>
+	<link rel="import" href="/components/core-toolbar/core-toolbar.html">
+	<link rel="import" href="/components/core-header-panel/core-header-panel.html">
+	<link rel="import" href="/components/core-icons/core-icons.html">
+	<link rel="import" href="/components/core-icons/av-icons.html">
+	<link rel="import" href="/components/core-pages/core-pages.html">
+	<link rel="import" href="/components/paper-icon-button/paper-icon-button.html">
+	<link rel="import" href="/components/paper-tabs/paper-tabs.html">
+	<link rel="import" href="/components/paper-progress/paper-progress.html">
+	<link rel="import" href="/components/font-roboto/roboto.html">
+
+	<link rel="stylesheet" href="/assets/main.css"  shim-shadowdom>
+
+	<meta name="mobile-web-app-capable" content="yes">
+	<link rel="manifest" href="/manifest.json">
+</head>
+<body fullbleed vertical layout unresolved>
+
+<core-pages id="appPages" selected="2" fit>
+
+<div id="pageMain" fit>
+	<core-toolbar class="medium-tall">
+		<!--<paper-icon-button id="navicon" icon="menu"></paper-icon-button>-->
+		<span flex>Clementine</span>
+		<!-- <paper-icon-button id="morebutton" icon="more-vert"></paper-icon-button> -->
+
+		<paper-tabs id="mainTabs" selected="0" class="bottom fit" noink>
+			<!-- <paper-tab>RECENT</paper-tab> -->
+			<paper-tab>ARTISTS</paper-tab>
+			<paper-tab>ALBUMS</paper-tab>
+			<paper-tab>TRACKS</paper-tab>
+		</paper-tabs>
+	</core-toolbar>
+
+	<core-pages id="mainPages" selected="0">
+		<!-- <div>Recent</div> -->
+		<div>Page 2</div>
+		<div>Page 3</div>
+		<div>Page 4</div>
+	</core-pages>
+</div>
+
+<div id="pageAlbum" fit>
+	<core-toolbar class="tall">
+		<paper-icon-button id="pageAlbumBack" icon="arrow-back"></paper-icon-button>
+
+		<span flex>21</span>
+
+		<paper-tabs id="mainTabs" selected="1" class="bottom fit" noink>
+			<paper-tab>INFOS</paper-tab>
+			<paper-tab>TRACKS</paper-tab>
+		</paper-tabs>
+	</core-toolbar>
+
+	<core-pages id="mainPages" selected="1">
+		<div>Page 1</div>
+		<div>Page 2</div>
+	</core-pages>
+</div>
+
+<div id="pagePlaying" fit layout vertical>
+	<core-toolbar>
+		<paper-icon-button id="pagePlayingBack" icon="arrow-back"></paper-icon-button>
+
+		<span flex>Now playing</span>
+
+		<paper-icon-button icon="more-vert"></paper-icon-button>
+	</core-toolbar>
+
+	<core-toolbar id="pagePlayingTrack">
+		<span flex>
+			<span id="pagePlayingTitle">Rolling in the Deep</span>
+			<span id="pagePlayingSubtitle" class="subtitle">Lol</span>
+		</span>
+
+		<paper-icon-button icon="list"></paper-icon-button>
+	</core-toolbar>
+
+	<div id="pagePlayingCover" flex></div>
+
+	<core-toolbar id="pagePlayingControls">
+		<div vertical layout fit>
+			<div><paper-progress id="pagePlayingProgress" value="0"></paper-progress></div>
+			<div horizontal center-justified layout>
+				<div self-center>
+					<paper-icon-button id="nowPlayingPrevious" icon="av:fast-rewind"></paper-icon-button>
+				</div>
+				<div self-center>
+					<paper-icon-button id="nowPlayingPlay" icon="av:play-arrow"></paper-icon-button>
+					<paper-icon-button id="nowPlayingPause" icon="av:pause" style="display: none;"></paper-icon-button>
+				</div>
+				<div self-center>
+					<paper-icon-button id="nowPlayingNext" icon="av:fast-forward"></paper-icon-button>
+				</div>
+			</div>
+		</div>
+
+	</core-toolbar>
+</div>
+
+</core-pages>
+
+<!-- <div id="nowPlaying">
+	<core-toolbar class="medium">
+		<img src="http://ecx.images-amazon.com/images/I/71evDOB6QhL._SL1417_.jpg" alt="" class="album-cover">
+		<span flex>Rolling in the Deep</span>
+		<paper-icon-button id="nowPlayingPlay" icon="av:play-arrow"></paper-icon-button>
+	</core-toolbar>
+</div> -->
+
+<script src="/assets/main.js"></script>
+<script src="/assets/bundle.js"></script>
+</body>
+</html>
