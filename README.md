@@ -1,7 +1,7 @@
 clementine-remote-web
 =====================
 
-A web interface for Clementine powered by Node.js
+A web interface for Clementine powered by [Node.js](http://nodejs.org/), [Polymer](https://www.polymer-project.org) and [Browserify](http://browserify.org/).
 
 Install:
 ```shell

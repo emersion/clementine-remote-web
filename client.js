@@ -43,7 +43,7 @@ client.on('song', function (song) {
 	if (song.art) {
 		// TODO: support PNG too
 		var src = 'data:image/*;base64,'+song.art.toBase64();
-		elements.pagePlayingCover.src = src;
+		elements.pagePlayingCover.style.backgroundImage = 'url("'+src+'")';
 	}
 });
 client.on('play', function () {
