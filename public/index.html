@@ -12,9 +12,14 @@
 	<link rel="import" href="/components/core-icons/core-icons.html">
 	<link rel="import" href="/components/core-icons/av-icons.html">
 	<link rel="import" href="/components/core-pages/core-pages.html">
+	<link rel="import" href="/components/core-list/core-list.html">
+	<link rel="import" href="/components/core-menu/core-menu.html">
 	<link rel="import" href="/components/paper-icon-button/paper-icon-button.html">
 	<link rel="import" href="/components/paper-tabs/paper-tabs.html">
 	<link rel="import" href="/components/paper-progress/paper-progress.html">
+	<link rel="import" href="/components/paper-menu-button/paper-menu-button.html">
+	<link rel="import" href="/components/paper-dropdown/paper-dropdown.html">
+	<link rel="import" href="/components/paper-item/paper-item.html">
 	<link rel="import" href="/components/font-roboto/roboto.html">
 
 	<link rel="stylesheet" href="/assets/main.css"  shim-shadowdom>
@@ -72,7 +77,16 @@
 
 		<span flex>Now playing</span>
 
-		<paper-icon-button icon="more-vert"></paper-icon-button>
+		<paper-menu-button>
+			<paper-icon-button icon="more-vert"></paper-icon-button>
+			<paper-dropdown class="dropdown" halign="right">
+				<div class="menu">
+					<paper-item>Share</paper-item>
+					<paper-item>Settings</paper-item>
+					<paper-item>Help</paper-item>
+				</div>
+			</paper-dropdown>
+		</paper-menu-button>
 	</core-toolbar>
 
 	<core-toolbar id="pagePlayingTrack">
@@ -81,10 +95,25 @@
 			<span id="pagePlayingSubtitle" class="subtitle">Lol</span>
 		</span>
 
-		<paper-icon-button icon="list"></paper-icon-button>
+		<paper-icon-button id="pagePlayingSwitch" icon="list"></paper-icon-button>
 	</core-toolbar>
 
-	<div id="pagePlayingCover" flex></div>
+	<core-pages id="pagePlayingPages" selected="0" flex>
+		<div id="pagePlayingCover" fit></div>
+		<div id="pagePlayingPlaylistCtn" fit>
+			<core-list id="pagePlayingPlaylist" selectionEnabled fit>
+				<template>
+					<core-item label="{{model.title}}" class="playlist-item {{ {selected: selected} | tokenList }}" layout horizontal>
+						<div flex>
+							<div class="title">{{model.title}}</div>
+							<div class="artist">{{model.artist || ''}}</div>
+						</div>
+						<paper-icon-button icon="more-vert"></paper-icon-button>
+					</core-item>
+				</template>
+			</core-list>
+		</div>
+	</core-pages>
 
 	<core-toolbar id="pagePlayingControls">
 		<div vertical layout fit>
@@ -116,7 +145,7 @@
 	</core-toolbar>
 </div> -->
 
-<script src="/assets/main.js"></script>
 <script src="/assets/bundle.js"></script>
+
 </body>
 </html>

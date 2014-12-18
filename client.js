@@ -12,6 +12,8 @@ client.on('connect', function () {
 });
 client.on('ready', function () {
 	console.log('ready');
+
+	elements.pagePlayingPlaylist.data = client.songs;
 });
 client.on('disconnect', function (data) {
 	console.log('client disconnecting', data);
@@ -25,7 +27,7 @@ client.on('message', function (msg) {
 });
 
 var elementsList = [
-	'pagePlayingTitle', 'pagePlayingSubtitle', 'pagePlayingCover',
+	'pagePlayingTitle', 'pagePlayingSubtitle', 'pagePlayingCover', 'pagePlayingPlaylist',
 	'nowPlayingPrevious', 'nowPlayingPlay', 'nowPlayingPause', 'nowPlayingNext',
 	'pagePlayingProgress'
 ];
@@ -41,9 +43,10 @@ client.on('song', function (song) {
 	elements.pagePlayingSubtitle.innerHTML = (song.artist || '')+((song.artist && song.album) ? ' - ' : '')+(song.album || '');
 
 	if (song.art) {
-		// TODO: support PNG too
 		var src = 'data:image/*;base64,'+song.art.toBase64();
 		elements.pagePlayingCover.style.backgroundImage = 'url("'+src+'")';
+	} else {
+		elements.pagePlayingCover.style.backgroundImage = 'none'; //TODO: default cover
 	}
 });
 client.on('play', function () {
@@ -71,6 +74,10 @@ elements.nowPlayingNext.addEventListener('click', function () {
 	client.next();
 });
 
+elements.pagePlayingPlaylist.addEventListener('core-activate', function () {
+	console.log(elements.pagePlayingPlaylist.selection);
+});
+
 window.client = client;
 
 // Tabs
@@ -78,4 +85,10 @@ var tabs = document.getElementById('mainTabs');
 var pages = document.getElementById('mainPages');
 tabs.addEventListener('core-select', function () {
 	pages.selected = tabs.selected;
+});
+
+var pagePlayingPages = document.getElementById('pagePlayingPages');
+var pagePlayingSwitch = document.getElementById('pagePlayingSwitch');
+pagePlayingSwitch.addEventListener('click', function () {
+	pagePlayingPages.selected = (pagePlayingPages.selected + 1) % 2;
 });

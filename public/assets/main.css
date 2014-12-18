@@ -29,6 +29,10 @@ paper-progress::shadow #activeProgress {
 	opacity: 0.5;
 }
 
+paper-dropdown {
+    color: black;
+}
+
 #pageAlbum core-toolbar {
 	background-color: transparent;
 	background-image: url("http://ecx.images-amazon.com/images/I/71evDOB6QhL._SL1417_.jpg");
@@ -53,6 +57,19 @@ paper-progress::shadow #activeProgress {
 	margin-left: 10px;
 	opacity: 0.7;
 }
+#pagePlayingPlaylistCtn {
+	overflow: auto;
+}
+.playlist-item {
+	padding: 10px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+.playlist-item .title {
+	font-size: 1.1em;
+}
+.playlist-item .artist {
+	opacity: 0.7;
+}
 #pagePlayingControls {
 	width: 100%;
 	height: 90px;
@@ -66,7 +83,6 @@ paper-progress::shadow #activeProgress {
 	height: 48px;
 }
 #pagePlaying #pagePlayingCover {
-	background-image: url("http://ecx.images-amazon.com/images/I/71evDOB6QhL._SL1417_.jpg");
 	background-size: contain;
 	background-position: center center;
 	background-repeat: no-repeat;
