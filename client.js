@@ -41,20 +41,23 @@ client.on('library', function (library) {
 
 var elementsList = [
 	'appPages',
-	'mainTracks', 'mainAlbums',
+	'mainTracks', 'mainAlbums', 'mainPlayingToolbar',
 	'pageAlbum',
 	'pagePlayingBack',
 	'pagePlayingTitle', 'pagePlayingSubtitle', 'pagePlayingCover', 'pagePlayingPlaylist',
 	'nowPlayingPrevious', 'nowPlayingPlaypause', 'nowPlayingNext',
 	'pagePlayingProgress',
 	'nowPlaying',
-	'downloadingLibraryToast'
+	'downloadingLibraryToast', 'connectDialog'
 ];
 var elements = {};
 for (var i = 0; i < elementsList.length; i++) {
 	var el = elementsList[i];
 	elements[el] = document.getElementById(el);
 }
+
+elements.mainPlayingToolbar.client = client;
+elements.pageAlbum.client = client;
 
 client.on('song', function (song) {
 	console.log('Song', song);
@@ -103,12 +106,6 @@ elements.pagePlayingPlaylist.addEventListener('core-activate', function () {
 	}
 });
 
-elements.nowPlaying.addEventListener('click', function () {
-	elements.appPages.selected = 2;
-});
-
-window.client = client;
-
 // Tabs
 var tabs = document.getElementById('mainTabs');
 var pages = document.getElementById('mainPages');
@@ -118,6 +115,8 @@ var ensureLibraryLoaded = function () {
 			case 0:
 				break;
 			case 1:
+				break;
+			case 2:
 				if (!elements.mainAlbums.data) {
 					client.library.db.exec('SELECT album, artist, COUNT(*) AS tracks_nbr, art_automatic, art_manual FROM songs GROUP BY album ORDER BY album', function (res) {
 						elements.mainAlbums.data = res.results[0].values;
@@ -126,10 +125,10 @@ var ensureLibraryLoaded = function () {
 					elements.downloadingLibraryToast.show();
 				}
 				break;
-			case 2:
-				if (!elements.mainTracks.tracks) {
-					client.library.db.exec('SELECT * FROM songs ORDER BY title', function (res) {
-						elements.mainTracks.tracks = res.results[0].values;
+			case 3:
+				if (!elements.mainTracks.data) {
+					client.library.db.exec('SELECT title, album, artist, CAST(filename AS TEXT) AS filename FROM songs ORDER BY title', function (res) {
+						elements.mainTracks.data = res.results[0].values;
 						elements.downloadingLibraryToast.dismiss();
 					});
 					elements.downloadingLibraryToast.show();
@@ -177,14 +176,22 @@ clementine.client = client;
 
 clementine.openAlbum = function (data) {
 	elements.pageAlbum.model = data;
-	client.library.db.exec('SELECT * FROM songs WHERE artist="'+data.artist+'" AND album="'+data.album+'" ORDER BY title', function (res) {
+	client.library.db.exec('SELECT title, album, artist, CAST(filename AS TEXT) AS filename FROM songs WHERE artist="'+data.artist+'" AND album="'+data.album+'" ORDER BY title', function (res) {
 		elements.pageAlbum.tracks = res.results[0].values;
 	});
 	elements.appPages.selected = 1;
 };
 
+clementine.openNowPlaying = function () {
+	elements.appPages.selected = 2;
+};
+
 clementine.goBack = function () {
 	elements.appPages.selected = 0;
+};
+
+clementine.playTrack = function (url) {
+	client.insert_urls(1, [url], { play_now: true });
 };
 
 });

@@ -16,12 +16,15 @@
 	<link rel="import" href="/components/core-list/core-list.html">
 	<link rel="import" href="/components/core-menu/core-menu.html">
 	<link rel="import" href="/components/paper-icon-button/paper-icon-button.html">
+	<link rel="import" href="/components/paper-button/paper-button.html">
 	<link rel="import" href="/components/paper-tabs/paper-tabs.html">
 	<link rel="import" href="/components/paper-slider/paper-slider.html">
 	<link rel="import" href="/components/paper-menu-button/paper-menu-button.html">
 	<link rel="import" href="/components/paper-dropdown/paper-dropdown.html">
 	<link rel="import" href="/components/paper-item/paper-item.html">
 	<link rel="import" href="/components/paper-toast/paper-toast.html">
+	<link rel="import" href="/components/paper-dialog/paper-dialog.html">
+	<link rel="import" href="/components/paper-dialog/paper-action-dialog.html">
 	<link rel="import" href="/components/font-roboto/roboto.html">
 
 	<link rel="stylesheet" href="/assets/main.css"  shim-shadowdom>
@@ -29,6 +32,8 @@
 	<meta name="mobile-web-app-capable" content="yes">
 	<link rel="manifest" href="/manifest.json">
 	<link rel="icon" href="https://github.com/clementine-player/Clementine/raw/master/data/icon.svg">
+
+	<script src="/assets/bundle.js"></script>
 </head>
 <body fullbleed vertical layout unresolved>
 
@@ -102,24 +107,70 @@
 	</script>
 </polymer-element>
 
-<polymer-element name="album-page" constructor="AlbumPage" attributes="model tracks">
+<polymer-element name="library-track" constructor="LibraryTrack" attributes="model">
+	<template>
+		<style>
+.track {
+	padding: 10px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+.track.selected {
+	background-color: rgba(255, 255, 255, 0.15);
+}
+.track .title {
+	font-size: 1.1em;
+}
+.track .artist {
+	opacity: 0.7;
+}
+		</style>
+		<core-item label="{{model.title}}" class="track" layout horizontal>
+			<div on-click="{{onClick}}" flex>
+				<div class="title">{{model[0] || 'Unknown'}}</div>
+				<div class="artist">{{model[2] || ''}}</div>
+			</div>
+			<paper-icon-button icon="more-vert"></paper-icon-button>
+		</core-item>
+	</template>
+	<script>
+	Polymer('library-track', {
+		onClick: function () {
+			clementine.playTrack(this.model[3]);
+		}
+	});
+	</script>
+</polymer-element>
+
+<polymer-element name="album-page" constructor="AlbumPage" attributes="model tracks client">
 	<template>
 		<style>
 core-toolbar {
+	background-color: #db6835;
+	color: white;
 	background-image: url("http://ecx.images-amazon.com/images/I/71evDOB6QhL._SL1417_.jpg");
 	background-size: cover;
 	background-position: center center;
-	height: 192px;
+	height: 300px;
+	-webkit-transition: 300ms all;
+	-moz-transition: 300ms all;
+	transition: 300ms all;
 }
 core-toolbar.no-cover {
-	height: auto;
+	height: 128px;
+	background-image: none;
+}
+core-toolbar.condensed {
+	height: 128px;
 }
 paper-tabs::shadow #selectionBar {
 	background-color: white;
 }
 		</style>
 		<div fit layout vertical>
-			<core-toolbar>
+			<core-toolbar id="toolbar" class="no-cover">
 				<paper-icon-button icon="arrow-back" on-click="{{goBack}}"></paper-icon-button>
 
 				<span flex>{{model.album}}</span>
@@ -133,9 +184,15 @@ paper-tabs::shadow #selectionBar {
 			<core-pages id="albumPages" selected="{{selectedTab}}" flex>
 				<div>Not implemented.</div>
 				<div fit>
-					<library-track-list id="tracks" fit></library-track-list>
+					<core-list id="tracks" data="{{tracks}}" selectionEnabled fit>
+						<template>
+							<library-track class="{{ {selected: selected} | tokenList }}" model="{{model}}"></library-track>
+						</template>
+					</core-list>
 				</div>
 			</core-pages>
+
+			<now-playing-toolbar id="playingToolbar"></now-playing-toolbar>
 		</div>
 	</template>
 	<script>
@@ -149,50 +206,93 @@ paper-tabs::shadow #selectionBar {
 		tracksChanged: function (oldValue, newValue) {
 			this.$.tracks.tracks = newValue;
 		},
+		clientChanged: function () {
+			this.$.playingToolbar.client = this.client;
+		},
 		ready: function () {
+			var that = this;
+			var readjusting = false;
 			this.$.tracks.addEventListener('scroll', function (e) {
-				console.log('scroll', e.detail.scrollTop);
+				if (readjusting) return;
+
+				var classList = that.$.toolbar.classList;
+				var changed = false;
+
+				if (that.$.tracks.scrollTop > 0 && !classList.contains('condensed')) {
+					that.$.toolbar.classList.add('condensed');
+					changed = true;
+				}
+				if (that.$.tracks.scrollTop == 0 && classList.contains('condensed')) {
+					that.$.toolbar.classList.remove('condensed');
+					changed = true;
+				}
+
+				if (changed) {
+					readjusting = true;
+					var scrollTop = that.$.tracks.scrollTop;
+					that.$.tracks.updateSize();
+					that.$.tracks.scrollTop = scrollTop;
+					setTimeout(function () {
+						readjusting = false;
+					}, 0);
+				}
 			});
 		}
 	});
 	</script>
 </polymer-element>
 
-<polymer-element name="library-track-list" constructor="LibraryTrackList" attributes="tracks">
+<polymer-element name="now-playing-toolbar" constructor="NowPlayingToolbar" attributes="client">
 	<template>
 		<style>
-.track {
-	padding: 10px;
-	border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+core-toolbar {
+	width: 100%;
+	color: white;
+	background-color: black;
 }
-.track.selected {
-	background-color: rgba(255, 255, 255, 0.15);
+core-toolbar::shadow #topBar {
+	padding-left: 0;
 }
-.track .title {
-	font-size: 1.1em;
-}
-.track .artist {
-	opacity: 0.7;
+core-toolbar img#cover {
+	height: 100%;
+	margin: 0;
 }
 		</style>
-		<core-list id="tracks" data="{{tracks}}" selectionEnabled fit>
-			<template>
-				<core-item label="{{model.title}}" class="track {{ {selected: selected} | tokenList }}" layout horizontal>
-					<div flex>
-						<div class="title">{{model[0] || 'Unknown'}}</div>
-						<div class="artist">{{model.artist || ''}}</div>
-					</div>
-					<paper-icon-button icon="more-vert"></paper-icon-button>
-				</core-item>
-			</template>
-		</core-list>
+		<core-toolbar id="nowPlaying">
+			<img src="http://ecx.images-amazon.com/images/I/71evDOB6QhL._SL1417_.jpg" alt="" id="cover">
+			<span id="title" flex>Rolling in the Deep</span>
+			<paper-icon-button id="playBtn" icon="av:play-arrow"></paper-icon-button>
+		</core-toolbar>
 	</template>
 	<script>
-	Polymer('library-track-list', {
+	Polymer('now-playing-toolbar', {
 		ready: function () {
+			this.$.playBtn.addEventListener('click', function (e) {
+				clementine.client.playpause();
+				e.stopPropagation();
+			});
+			this.$.nowPlaying.addEventListener('click', function (e) {
+				clementine.openNowPlaying();
+			});
+		},
+		clientChanged: function () {
 			var that = this;
-			this.$.tracks.addEventListener('scroll', function () {
-				that.fire('scroll', { scrollTop: this.scrollTop });
+			this.client.on('song', function (song) {
+				that.$.title.innerHTML = song.title;
+
+				if (song.art) {
+					var src = 'data:image/*;base64,'+song.art.toBase64();
+					that.$.cover.src = src;
+					that.$.cover.style.display = 'inline-block';
+				} else {
+					that.$.cover.style.display = 'none';
+				}
+			});
+			this.client.on('play', function (song) {
+				that.$.playBtn.icon = 'av:pause';
+			});
+			this.client.on('pause', function (song) {
+				that.$.playBtn.icon = 'av:play-arrow';
 			});
 		}
 	});
@@ -216,19 +316,17 @@ paper-tabs::shadow #selectionBar {
 			</paper-dropdown>
 		</paper-menu-button>
 
-		<paper-tabs id="mainTabs" selected="1" class="bottom fit" noink>
-			<!-- <paper-tab>RECENT</paper-tab> -->
+		<paper-tabs id="mainTabs" selected="2" class="bottom fit" noink>
+			<paper-tab>RECENT</paper-tab>
 			<paper-tab>ARTISTS</paper-tab>
 			<paper-tab>ALBUMS</paper-tab>
 			<paper-tab>TRACKS</paper-tab>
 		</paper-tabs>
 	</core-toolbar>
 
-	<core-pages id="mainPages" selected="1" flex>
-		<!-- <div>Recent</div> -->
-		<div>
-			Not implemented.
-		</div>
+	<core-pages id="mainPages" selected="2" flex>
+		<div>Not implemented.</div>
+		<div>Not implemented.</div>
 		<div style="overflow: auto;" fit>
 			<core-list id="mainAlbums" selectionEnabled fit grid width="150" height="150">
 				<template>
@@ -237,15 +335,15 @@ paper-tabs::shadow #selectionBar {
 			</core-list>
 		</div>
 		<div style="overflow: auto;" fit>
-			<library-track-list id="mainTracks" fit></library-track-list>
+			<core-list id="mainTracks" selectionEnabled fit>
+				<template>
+					<library-track class="{{ {selected: selected} | tokenList }}" model="{{model}}"></library-track>
+				</template>
+			</core-list>
 		</div>
 	</core-pages>
 
-	<core-toolbar id="nowPlaying" class="medium">
-		<img src="http://ecx.images-amazon.com/images/I/71evDOB6QhL._SL1417_.jpg" alt="" class="album-cover">
-		<span flex>Rolling in the Deep</span>
-		<paper-icon-button id="nowPlayingPlay" icon="av:play-arrow"></paper-icon-button>
-	</core-toolbar>
+	<now-playing-toolbar id="mainPlayingToolbar"></now-playing-toolbar>
 </div>
 
 <album-page id="pageAlbum" fit></album-page>
@@ -318,7 +416,11 @@ paper-tabs::shadow #selectionBar {
 
 <paper-toast id="downloadingLibraryToast" text="Loading library..." duration="9999" autoCloseDisabled></paper-toast>
 
-<script src="/assets/bundle.js"></script>
+<paper-action-dialog id="connectDialog" transition="core-transition-center" backdrop heading="Clementine" autoclosedisabled>
+	<p>Hello</p>
+
+	<paper-button affirmative autofocus role="button" tabindex="0">Connect</paper-button>
+</paper-action-dialog>
 
 </body>
 </html>

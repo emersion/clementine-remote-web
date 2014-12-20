@@ -87,16 +87,3 @@ paper-slider#pagePlayingProgress::shadow #sliderBar::shadow #activeProgress {
 paper-slider#pagePlayingProgress::shadow #sliderKnobInner {
 	background-color: #db6835;
 }
-
-#nowPlaying {
-	width: 100%;
-	color: white;
-	background-color: black;
-}
-#nowPlaying::shadow #topBar {
-	padding-left: 0;
-}
-#nowPlaying img {
-	height: 100%;
-	margin: 0;
-}
