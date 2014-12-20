@@ -42,7 +42,7 @@ client.on('library', function (library) {
 
 var elementsList = [
 	'appPages',
-	'mainTracks', 'mainAlbums', 'mainPlayingToolbar',
+	'refreshLibraryBtn', 'mainTracks', 'mainAlbums', 'mainPlayingToolbar',
 	'pageAlbum',
 	'pagePlayingBack',
 	'pagePlayingTitle', 'pagePlayingSubtitle', 'pagePlayingCover', 'pagePlayingPlaylist',
@@ -86,6 +86,10 @@ client.on('position', function (pos) {
 	elements.pagePlayingProgress.value = pos / client.song.length * 100;
 });
 
+elements.refreshLibraryBtn.addEventListener('click', function () {
+	ensureLibraryLoaded(true);
+});
+
 elements.pagePlayingBack.addEventListener('click', function () {
 	elements.appPages.selected = 0;
 });
@@ -110,8 +114,13 @@ elements.pagePlayingPlaylist.addEventListener('core-activate', function () {
 // Tabs
 var tabs = document.getElementById('mainTabs');
 var pages = document.getElementById('mainPages');
-var ensureLibraryLoaded = function () {
+var ensureLibraryLoaded = function (reload) {
 	var libraryLoaded = function () {
+		if (reload) {
+			elements.mainAlbums.data = null;
+			elements.mainTracks.data = null;
+		}
+
 		switch (parseInt(pages.selected)) {
 			case 0:
 				break;
@@ -138,9 +147,9 @@ var ensureLibraryLoaded = function () {
 		}
 	};
 
-	if (client.library.db.opened) {
+	if (client.library.db.opened && !reload) {
 		libraryLoaded();
-	} else if (client.library.isCached()) {
+	} else if (client.library.isCached() && !reload) {
 		client.library.openFromCache(function () {
 			elements.downloadingLibraryToast.dismiss();
 			libraryLoaded();
@@ -196,9 +205,8 @@ clementine.playTrack = function (url) {
 };
 
 });
-},{"clementine-remote":"/home/simon/public_html/clementine-remote-web/node_modules/clementine-remote/index.js"}],"/home/simon/public_html/clementine-remote-web/node_modules/clementine-remote/index.js":[function(require,module,exports){
+},{"clementine-remote":"/home/simon/public_html/clementine-remote-web/node_modules/clementine-remote/browser.js"}],"/home/simon/public_html/clementine-remote-web/node_modules/clementine-remote/browser.js":[function(require,module,exports){
 exports.Client = require('./lib/client');
-//exports.Server = require('./lib/server');
 
 },{"./lib/client":"/home/simon/public_html/clementine-remote-web/node_modules/clementine-remote/lib/client.js"}],"/home/simon/public_html/clementine-remote-web/node_modules/clementine-remote/lib/browser/library.js":[function(require,module,exports){
 (function (process){
@@ -450,7 +458,10 @@ function Client(opts) {
 				break;
 			case MsgType.INFO:
 				that.version = msg.response_clementine_info.version;
-				that.state = msg.response_clementine_info.state; //TODO: get string instead of constant value
+				that.state = proto.getEngineStateName(msg.response_clementine_info.state);
+				if (that.state == 'Playing') {
+					that.emit('play');
+				}
 				break;
 			case MsgType.CURRENT_METAINFO:
 				that.song = msg.response_current_metadata.song_metadata;
@@ -774,7 +785,16 @@ proto.getMsgTypeName = function (typeIndex) {
 		}
 	}
 	return '';
-}
+};
+
+proto.getEngineStateName = function (stateIndex) {
+	for (var name in proto.EngineState) {
+		if (proto.EngineState[name] === stateIndex) {
+			return name;
+		}
+	}
+	return '';
+};
 
 module.exports = proto;
 },{"protobufjs":"/home/simon/public_html/clementine-remote-web/node_modules/clementine-remote/node_modules/protobufjs/index.js"}],"/home/simon/public_html/clementine-remote-web/node_modules/clementine-remote/lib/utils.js":[function(require,module,exports){

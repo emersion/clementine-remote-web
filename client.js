@@ -41,7 +41,7 @@ client.on('library', function (library) {
 
 var elementsList = [
 	'appPages',
-	'mainTracks', 'mainAlbums', 'mainPlayingToolbar',
+	'refreshLibraryBtn', 'mainTracks', 'mainAlbums', 'mainPlayingToolbar',
 	'pageAlbum',
 	'pagePlayingBack',
 	'pagePlayingTitle', 'pagePlayingSubtitle', 'pagePlayingCover', 'pagePlayingPlaylist',
@@ -85,6 +85,10 @@ client.on('position', function (pos) {
 	elements.pagePlayingProgress.value = pos / client.song.length * 100;
 });
 
+elements.refreshLibraryBtn.addEventListener('click', function () {
+	ensureLibraryLoaded(true);
+});
+
 elements.pagePlayingBack.addEventListener('click', function () {
 	elements.appPages.selected = 0;
 });
@@ -109,8 +113,13 @@ elements.pagePlayingPlaylist.addEventListener('core-activate', function () {
 // Tabs
 var tabs = document.getElementById('mainTabs');
 var pages = document.getElementById('mainPages');
-var ensureLibraryLoaded = function () {
+var ensureLibraryLoaded = function (reload) {
 	var libraryLoaded = function () {
+		if (reload) {
+			elements.mainAlbums.data = null;
+			elements.mainTracks.data = null;
+		}
+
 		switch (parseInt(pages.selected)) {
 			case 0:
 				break;
@@ -137,9 +146,9 @@ var ensureLibraryLoaded = function () {
 		}
 	};
 
-	if (client.library.db.opened) {
+	if (client.library.db.opened && !reload) {
 		libraryLoaded();
-	} else if (client.library.isCached()) {
+	} else if (client.library.isCached() && !reload) {
 		client.library.openFromCache(function () {
 			elements.downloadingLibraryToast.dismiss();
 			libraryLoaded();

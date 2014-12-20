@@ -256,6 +256,10 @@ core-toolbar::shadow #topBar {
 core-toolbar img#cover {
 	height: 100%;
 	margin: 0;
+	cursor: pointer;
+}
+core-toolbar #title {
+	cursor: pointer;
 }
 		</style>
 		<core-toolbar id="nowPlaying">
@@ -305,6 +309,7 @@ core-toolbar img#cover {
 	<core-toolbar class="medium-tall">
 		<!--<paper-icon-button id="navicon" icon="menu"></paper-icon-button>-->
 		<span flex>Clementine</span>
+		<paper-icon-button id="refreshLibraryBtn" icon="cached"></paper-icon-button>
 		<paper-menu-button>
 			<paper-icon-button icon="more-vert"></paper-icon-button>
 			<paper-dropdown class="dropdown" halign="right">
