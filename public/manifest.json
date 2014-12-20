@@ -2,5 +2,21 @@
 	"name": "Clementine",
 	"start_url": "index.html",
 	"display": "standalone",
-	"orientation": "portait"
+	"orientation": "portait",
+	"icons": [
+		{
+			"src": "https://github.com/clementine-player/Clementine/raw/master/data/icon.svg",
+			"type": "image/svg+xml"
+		},
+		{
+			"src": "https://github.com/clementine-player/Clementine/raw/master/data/icon.png",
+			"type": "image/png",
+			"sizes": "64x64"
+		},
+		{
+			"src": "https://github.com/clementine-player/Clementine/raw/master/data/icon_large.png",
+			"type": "image/png",
+			"sizes": "512x512"
+		}
+	]
 }

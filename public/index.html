@@ -11,33 +11,212 @@
 	<link rel="import" href="/components/core-header-panel/core-header-panel.html">
 	<link rel="import" href="/components/core-icons/core-icons.html">
 	<link rel="import" href="/components/core-icons/av-icons.html">
+	<link rel="import" href="/components/core-icons/hardware-icons.html">
 	<link rel="import" href="/components/core-pages/core-pages.html">
 	<link rel="import" href="/components/core-list/core-list.html">
 	<link rel="import" href="/components/core-menu/core-menu.html">
 	<link rel="import" href="/components/paper-icon-button/paper-icon-button.html">
 	<link rel="import" href="/components/paper-tabs/paper-tabs.html">
-	<link rel="import" href="/components/paper-progress/paper-progress.html">
+	<link rel="import" href="/components/paper-slider/paper-slider.html">
 	<link rel="import" href="/components/paper-menu-button/paper-menu-button.html">
 	<link rel="import" href="/components/paper-dropdown/paper-dropdown.html">
 	<link rel="import" href="/components/paper-item/paper-item.html">
+	<link rel="import" href="/components/paper-toast/paper-toast.html">
 	<link rel="import" href="/components/font-roboto/roboto.html">
 
 	<link rel="stylesheet" href="/assets/main.css"  shim-shadowdom>
 
 	<meta name="mobile-web-app-capable" content="yes">
 	<link rel="manifest" href="/manifest.json">
+	<link rel="icon" href="https://github.com/clementine-player/Clementine/raw/master/data/icon.svg">
 </head>
 <body fullbleed vertical layout unresolved>
 
-<core-pages id="appPages" selected="2" fit>
+<polymer-element name="library-album" constructor="LibraryAlbum" attributes="model">
+	<template>
+		<style>
+.album-item {
+	width: 145px;
+	height: 140px;
+	margin-top: 5px;
+	border-bottom: 5px solid transparent;
+}
+.album-item .cover {
+	/*background-image: url("http://ecx.images-amazon.com/images/I/71evDOB6QhL._SL1417_.jpg");*/
+	background-size: cover;
+	background-position: center center;
+}
+/* @see http://nicolasgallagher.com/css-background-image-hacks/#emulating-background-opacity */
+.album-item .cover.no-cover::before {
+	content: "";
+	position: absolute;
+	z-index: -1;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
 
-<div id="pageMain" fit>
+	background-image: url("/assets/headset.svg");
+	background-size: contain;
+	background-position: center center;
+	background-repeat: no-repeat;
+	opacity: 0.2;
+}
+.album-item .footer {
+	background-color: #2D2D2D;
+}
+.album-item .footer .info {
+	padding: 7px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+.album-item .footer .info .subtitle {
+	color: gray;
+}
+		</style>
+		<core-item class="album-item {{ {selected: selected} | tokenList }}" layout vertical>
+			<paper-ripple class="cover no-cover" flex on-click="{{onClick}}"></paper-ripple>
+			<div class="footer" layout horizontal>
+				<div class="info" flex layout vertical on-click="{{onClick}}">
+					<div class="title">{{model[0] || 'Unknown'}}</div>
+					<div class="subtitle">
+						<span class="artist">{{model[1]}}</span> | <span class="tracks">{{model[2]}} tracks</span>
+					</div>
+				</div>
+				<div class="actions" horizontal layout end>
+					<paper-icon-button icon="more-vert"></paper-icon-button>
+				</div>
+			</div>
+		</core-item>
+	</template>
+	<script>
+	Polymer('library-album', {
+		onClick: function () {
+			clementine.openAlbum({
+				album: this.model[0],
+				artist: this.model[1]
+			});
+		}
+	});
+	</script>
+</polymer-element>
+
+<polymer-element name="album-page" constructor="AlbumPage" attributes="model tracks">
+	<template>
+		<style>
+core-toolbar {
+	background-image: url("http://ecx.images-amazon.com/images/I/71evDOB6QhL._SL1417_.jpg");
+	background-size: cover;
+	background-position: center center;
+	height: 192px;
+}
+core-toolbar.no-cover {
+	height: auto;
+}
+paper-tabs::shadow #selectionBar {
+	background-color: white;
+}
+		</style>
+		<div fit layout vertical>
+			<core-toolbar>
+				<paper-icon-button icon="arrow-back" on-click="{{goBack}}"></paper-icon-button>
+
+				<span flex>{{model.album}}</span>
+
+				<paper-tabs id="albumTabs" selected="{{selectedTab}}" class="bottom fit" noink>
+					<paper-tab>INFOS</paper-tab>
+					<paper-tab>TRACKS</paper-tab>
+				</paper-tabs>
+			</core-toolbar>
+
+			<core-pages id="albumPages" selected="{{selectedTab}}" flex>
+				<div>Not implemented.</div>
+				<div fit>
+					<library-track-list id="tracks" fit></library-track-list>
+				</div>
+			</core-pages>
+		</div>
+	</template>
+	<script>
+	Polymer('album-page', {
+		selectedTab: 1,
+		model: { album: 'Unknown', artist: 'Unknown' },
+		tracks: [],
+		goBack: function () {
+			clementine.goBack();
+		},
+		tracksChanged: function (oldValue, newValue) {
+			this.$.tracks.tracks = newValue;
+		},
+		ready: function () {
+			this.$.tracks.addEventListener('scroll', function (e) {
+				console.log('scroll', e.detail.scrollTop);
+			});
+		}
+	});
+	</script>
+</polymer-element>
+
+<polymer-element name="library-track-list" constructor="LibraryTrackList" attributes="tracks">
+	<template>
+		<style>
+.track {
+	padding: 10px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+.track.selected {
+	background-color: rgba(255, 255, 255, 0.15);
+}
+.track .title {
+	font-size: 1.1em;
+}
+.track .artist {
+	opacity: 0.7;
+}
+		</style>
+		<core-list id="tracks" data="{{tracks}}" selectionEnabled fit>
+			<template>
+				<core-item label="{{model.title}}" class="track {{ {selected: selected} | tokenList }}" layout horizontal>
+					<div flex>
+						<div class="title">{{model[0] || 'Unknown'}}</div>
+						<div class="artist">{{model.artist || ''}}</div>
+					</div>
+					<paper-icon-button icon="more-vert"></paper-icon-button>
+				</core-item>
+			</template>
+		</core-list>
+	</template>
+	<script>
+	Polymer('library-track-list', {
+		ready: function () {
+			var that = this;
+			this.$.tracks.addEventListener('scroll', function () {
+				that.fire('scroll', { scrollTop: this.scrollTop });
+			});
+		}
+	});
+	</script>
+</polymer-element>
+
+<core-pages id="appPages" selected="0" fit>
+
+<div id="pageMain" fit layout vertical>
 	<core-toolbar class="medium-tall">
 		<!--<paper-icon-button id="navicon" icon="menu"></paper-icon-button>-->
 		<span flex>Clementine</span>
-		<!-- <paper-icon-button id="morebutton" icon="more-vert"></paper-icon-button> -->
+		<paper-menu-button>
+			<paper-icon-button icon="more-vert"></paper-icon-button>
+			<paper-dropdown class="dropdown" halign="right">
+				<div class="menu">
+					<paper-item>Share</paper-item>
+					<paper-item>Settings</paper-item>
+					<paper-item>Help</paper-item>
+				</div>
+			</paper-dropdown>
+		</paper-menu-button>
 
-		<paper-tabs id="mainTabs" selected="0" class="bottom fit" noink>
+		<paper-tabs id="mainTabs" selected="1" class="bottom fit" noink>
 			<!-- <paper-tab>RECENT</paper-tab> -->
 			<paper-tab>ARTISTS</paper-tab>
 			<paper-tab>ALBUMS</paper-tab>
@@ -45,31 +224,31 @@
 		</paper-tabs>
 	</core-toolbar>
 
-	<core-pages id="mainPages" selected="0">
+	<core-pages id="mainPages" selected="1" flex>
 		<!-- <div>Recent</div> -->
-		<div>Page 2</div>
-		<div>Page 3</div>
-		<div>Page 4</div>
+		<div>
+			Not implemented.
+		</div>
+		<div style="overflow: auto;" fit>
+			<core-list id="mainAlbums" selectionEnabled fit grid width="150" height="150">
+				<template>
+					<library-album model="{{model}}"></library-album>
+				</template>
+			</core-list>
+		</div>
+		<div style="overflow: auto;" fit>
+			<library-track-list id="mainTracks" fit></library-track-list>
+		</div>
 	</core-pages>
-</div>
 
-<div id="pageAlbum" fit>
-	<core-toolbar class="tall">
-		<paper-icon-button id="pageAlbumBack" icon="arrow-back"></paper-icon-button>
-
-		<span flex>21</span>
-
-		<paper-tabs id="mainTabs" selected="1" class="bottom fit" noink>
-			<paper-tab>INFOS</paper-tab>
-			<paper-tab>TRACKS</paper-tab>
-		</paper-tabs>
+	<core-toolbar id="nowPlaying" class="medium">
+		<img src="http://ecx.images-amazon.com/images/I/71evDOB6QhL._SL1417_.jpg" alt="" class="album-cover">
+		<span flex>Rolling in the Deep</span>
+		<paper-icon-button id="nowPlayingPlay" icon="av:play-arrow"></paper-icon-button>
 	</core-toolbar>
-
-	<core-pages id="mainPages" selected="1">
-		<div>Page 1</div>
-		<div>Page 2</div>
-	</core-pages>
 </div>
+
+<album-page id="pageAlbum" fit></album-page>
 
 <div id="pagePlaying" fit layout vertical>
 	<core-toolbar>
@@ -77,6 +256,7 @@
 
 		<span flex>Now playing</span>
 
+		<paper-icon-button icon="favorite-outline"></paper-icon-button>
 		<paper-menu-button>
 			<paper-icon-button icon="more-vert"></paper-icon-button>
 			<paper-dropdown class="dropdown" halign="right">
@@ -95,7 +275,7 @@
 			<span id="pagePlayingSubtitle" class="subtitle">Lol</span>
 		</span>
 
-		<paper-icon-button id="pagePlayingSwitch" icon="list"></paper-icon-button>
+		<paper-icon-button id="pagePlayingSwitch" icon="av:queue-music"></paper-icon-button>
 	</core-toolbar>
 
 	<core-pages id="pagePlayingPages" selected="0" flex>
@@ -117,14 +297,13 @@
 
 	<core-toolbar id="pagePlayingControls">
 		<div vertical layout fit>
-			<div><paper-progress id="pagePlayingProgress" value="0"></paper-progress></div>
+			<div><paper-slider id="pagePlayingProgress" value="0"></paper-slider></div>
 			<div horizontal center-justified layout>
 				<div self-center>
 					<paper-icon-button id="nowPlayingPrevious" icon="av:fast-rewind"></paper-icon-button>
 				</div>
 				<div self-center>
-					<paper-icon-button id="nowPlayingPlay" icon="av:play-arrow"></paper-icon-button>
-					<paper-icon-button id="nowPlayingPause" icon="av:pause" style="display: none;"></paper-icon-button>
+					<paper-icon-button id="nowPlayingPlaypause" icon="av:play-arrow"></paper-icon-button>
 				</div>
 				<div self-center>
 					<paper-icon-button id="nowPlayingNext" icon="av:fast-forward"></paper-icon-button>
@@ -137,13 +316,7 @@
 
 </core-pages>
 
-<!-- <div id="nowPlaying">
-	<core-toolbar class="medium">
-		<img src="http://ecx.images-amazon.com/images/I/71evDOB6QhL._SL1417_.jpg" alt="" class="album-cover">
-		<span flex>Rolling in the Deep</span>
-		<paper-icon-button id="nowPlayingPlay" icon="av:play-arrow"></paper-icon-button>
-	</core-toolbar>
-</div> -->
+<paper-toast id="downloadingLibraryToast" text="Loading library..." duration="9999" autoCloseDisabled></paper-toast>
 
 <script src="/assets/bundle.js"></script>
 

@@ -33,17 +33,6 @@ paper-dropdown {
     color: black;
 }
 
-#pageAlbum core-toolbar {
-	background-color: transparent;
-	background-image: url("http://ecx.images-amazon.com/images/I/71evDOB6QhL._SL1417_.jpg");
-	background-size: cover;
-	background-position: center center;
-}
-#pageAlbum .spacer {
-	height: 500px;
-	width: 100%;
-}
-
 #pagePlayingTrack, #pagePlayingControls {
 	background-color: black;
 }
@@ -64,6 +53,9 @@ paper-dropdown {
 	padding: 10px;
 	border-bottom: 1px solid rgba(255, 255, 255, 0.15);
 }
+.playlist-item.selected {
+	background-color: rgba(255, 255, 255, 0.15);
+}
 .playlist-item .title {
 	font-size: 1.1em;
 }
@@ -77,8 +69,7 @@ paper-dropdown {
 #pagePlayingControls paper-progress {
 	width: 100%;
 }
-#pagePlayingControls #nowPlayingPlay::shadow core-icon,
-#pagePlayingControls #nowPlayingPause::shadow core-icon {
+#pagePlayingControls #nowPlayingPlaypause::shadow core-icon {
 	width: 48px;
 	height: 48px;
 }
@@ -87,16 +78,25 @@ paper-dropdown {
 	background-position: center center;
 	background-repeat: no-repeat;
 }
+#pagePlaying paper-slider#pagePlayingProgress {
+	width: 100%;
+}
+paper-slider#pagePlayingProgress::shadow #sliderBar::shadow #activeProgress {
+	background-color: #db6835;
+}
+paper-slider#pagePlayingProgress::shadow #sliderKnobInner {
+	background-color: #db6835;
+}
 
 #nowPlaying {
-	position: absolute;
-	bottom: 0;
 	width: 100%;
 	color: white;
-}
-#nowPlaying core-toolbar {
 	background-color: black;
+}
+#nowPlaying::shadow #topBar {
+	padding-left: 0;
 }
 #nowPlaying img {
 	height: 100%;
+	margin: 0;
 }

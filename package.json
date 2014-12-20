@@ -37,8 +37,7 @@
   },
   "aliasify": {
     "aliases": {
-      "net": "net-browserify",
-      "sqlite3": "lel"
+      "net": "net-browserify"
     }
   }
 }
