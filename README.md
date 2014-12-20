@@ -16,4 +16,6 @@ Run:
 node .
 ```
 
-Since Browserify is used, if you want to edit `client.js` run `./build.sh` after (you will need `browserify`/`watchify` to be installed: `npm install -g browserify watchify`).
+Since Browserify is used, if you want to edit `client.js` run `grunt build` after (you will need `grunt` to be installed: `npm install -g grunt-cli`).
+
+You can run `grunt watch` instead to recompile automagically the browserify bundle when a file is changed.
