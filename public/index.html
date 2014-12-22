@@ -25,9 +25,10 @@
 	<link rel="import" href="/components/paper-toast/paper-toast.html">
 	<link rel="import" href="/components/paper-dialog/paper-dialog.html">
 	<link rel="import" href="/components/paper-dialog/paper-action-dialog.html">
+	<link rel="import" href="/components/paper-checkbox/paper-checkbox.html">
 	<link rel="import" href="/components/font-roboto/roboto.html">
 
-	<link rel="stylesheet" href="/assets/main.css"  shim-shadowdom>
+	<link rel="stylesheet" href="/assets/main.css" shim-shadowdom>
 
 	<meta name="mobile-web-app-capable" content="yes">
 	<link rel="manifest" href="/manifest.json">
@@ -475,8 +476,7 @@ paper-dropdown {
 					<paper-icon-button icon="more-vert"></paper-icon-button>
 					<paper-dropdown class="dropdown" halign="right">
 						<div class="menu">
-							<paper-item>Share</paper-item>
-							<paper-item>Settings</paper-item>
+							<paper-item id="disconnectBtn">Disconnect</paper-item>
 							<paper-item id="aboutBtn">About</paper-item>
 						</div>
 					</paper-dropdown>
@@ -536,6 +536,9 @@ paper-dropdown {
 			var that = this;
 			this.$.refreshLibraryBtn.addEventListener('click', function () {
 				that.reload();
+			});
+			this.$.disconnectBtn.addEventListener('click', function () {
+				clementine.disconnect();
 			});
 			this.$.aboutBtn.addEventListener('click', function () {
 				window.open('https://github.com/emersion/clementine-remote-web');
@@ -639,8 +642,8 @@ core-toolbar #title {
 }
 		</style>
 		<core-toolbar id="nowPlaying">
-			<img src="http://ecx.images-amazon.com/images/I/71evDOB6QhL._SL1417_.jpg" alt="" id="cover">
-			<span id="title" flex>Rolling in the Deep</span>
+			<img src="" alt="" id="cover">
+			<span id="title" flex></span>
 			<paper-icon-button id="playBtn" icon="av:play-arrow"></paper-icon-button>
 		</core-toolbar>
 	</template>
@@ -771,7 +774,7 @@ paper-slider::shadow #sliderKnobInner {
 			<core-toolbar id="track">
 				<span flex>
 					<span id="title">{{song.title || 'Unknown'}}</span>
-					<span id="subtitle" class="subtitle">{{song.artist || ''}} - {{song.album || ''}}</span>
+					<span id="subtitle" class="subtitle">{{song.artist || ''}} {{(song.artist && song.album) ? '-' : ''}} {{song.album || ''}}</span>
 				</span>
 
 				<paper-icon-button id="playlistBtn" icon="av:queue-music"></paper-icon-button>
@@ -885,6 +888,141 @@ paper-slider::shadow #sliderKnobInner {
 	</script>
 </polymer-element>
 
+<polymer-element name="connect-dialog" constructor="ConnectDialog">
+	<template>
+
+		<paper-action-dialog id="connectDialog" transition="core-transition-center" backdrop autoclosedisabled>
+			<style>
+			paper-input /deep/ .focused-underline {
+				background-color: #db6835;
+			}
+			img {
+				display: block;
+				margin: 0 auto;
+			}
+			p {
+				margin-bottom: 0;
+			}
+			</style>
+			<img src="/assets/icon.svg" alt="">
+
+			<p>Enter your server address:</p>
+
+			<paper-input id="connectDialogAddress" label="Server address" value="localhost"></paper-input><br>
+			<paper-checkbox id="connectDialogRemember" checked label="Remember this server"></paper-checkbox>
+
+			<paper-button id="connectDialogSubmit" affirmative autofocus role="button" tabindex="0">Connect</paper-button>
+		</paper-action-dialog>
+
+		<paper-action-dialog id="authCodeDialog" transition="core-transition-center" backdrop autoclosedisabled heading="Authentication code">
+			<style>
+			paper-input /deep/ .focused-underline {
+				background-color: #db6835;
+			}
+			</style>
+			<p>Enter your server authentication code:</p>
+
+			<paper-input id="serverAuthCode" label="Code"></paper-input>
+
+			<paper-button id="authCodeDialogSubmit" affirmative autofocus role="button" tabindex="0">Connect</paper-button>
+		</paper-action-dialog>
+
+		<paper-toast id="connectingToast" text="Connecting..." duration="9999" autoCloseDisabled></paper-toast>
+		<paper-toast id="errorToast" text="Cannot connect to server"></paper-toast>
+		<paper-toast id="successToast" text="Connected to server"></paper-toast>
+	</template>
+	<script>
+	Polymer('connect-dialog', {
+		ready: function () {
+			var that = this;
+			
+			var address, remember;
+			this.$.connectDialogSubmit.addEventListener('click', function (e) {
+				address = that.$.connectDialogAddress.value;
+				remember = that.$.connectDialogRemember.checked;
+
+				that.connect(address, remember);
+			});
+
+			this.$.authCodeDialogSubmit.addEventListener('click', function (e) {
+				var code = that.$.serverAuthCode.value;
+
+				that.connect(address, remember, code);
+			});
+		},
+		open: function () {
+			var savedServerStr = localStorage.getItem('server');
+			if (savedServerStr) {
+				var savedServer = JSON.parse(savedServerStr);
+				this.connect(savedServer.address, false, savedServer.auth_code);
+			} else {
+				this.$.connectDialog.open();
+			}
+		},
+		connect: function (address, remember, authCode) {
+			var that = this;
+
+			var addressParts = address.split(':');
+			var host = addressParts[0];
+			var port;
+			if (addressParts[1]) {
+				port = addressParts[1];
+			}
+
+			this.$.connectingToast.show();
+			clementine.connect({
+				host: host,
+				port: port,
+				auth_code: (authCode) ? parseInt(authCode) : undefined
+			}, function (err) {
+				if (!err) {
+					that.$.successToast.show();
+
+					if (remember) {
+						localStorage.setItem('server', JSON.stringify({
+							address: address,
+							auth_code: authCode
+						}));
+					}
+					return;
+				}
+
+				var tryReconnect = true;
+
+				if (typeof err == 'object') {
+					if (err.reason == 'Wrong_Auth_Code') {
+						if (authCode) {
+							err = 'Wrong authentication code';
+						} else {
+							err = '';
+						}
+						tryReconnect = false;
+						setTimeout(function () {
+							that.$.authCodeDialog.open();
+						}, 500);
+					}
+				}
+
+				setTimeout(function () {
+					if (tryReconnect) {
+						that.$.connectDialog.open();
+					}
+					if (err) {
+						that.$.connectingToast.dismiss();
+						that.$.errorToast.text = err;
+						that.$.errorToast.show();
+					}
+				}, 500);
+			});
+		},
+		disconnect: function () {
+			localStorage.setItem('server', '');
+			this.open();
+		}
+	});
+	</script>
+</polymer-element>
+
 <core-pages id="appPages" selected="0" fit>
 	<library-page id="pageLibrary" fit></library-page>
 	<album-page id="pageAlbum" fit></album-page>
@@ -892,11 +1030,7 @@ paper-slider::shadow #sliderKnobInner {
 	<now-playing-page id="pageNowPlaying" fit></now-playing-page>
 </core-pages>
 
-<paper-action-dialog id="connectDialog" transition="core-transition-center" backdrop heading="Clementine" autoclosedisabled>
-	<p>Hello</p>
-
-	<paper-button affirmative autofocus role="button" tabindex="0">Connect</paper-button>
-</paper-action-dialog>
+<connect-dialog id="connectDialog"></connect-dialog>
 
 </body>
 </html>

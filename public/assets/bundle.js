@@ -2,45 +2,12 @@
 var ClementineClient = require('clementine-remote').Client;
 var covers = require('album-cover')('3f6675c78c4054c7ee6e361a06ec6cff');
 
-window.addEventListener('polymer-ready', function (e) {
-
-console.log('Connecting to local clementine server...');
-var client = ClementineClient({
-	host: 'localhost',
-	port: 5500,
-	auth_code: 42
-});
-
-client.on('connect', function () {
-	console.log('connected');
-});
-client.on('ready', function () {
-	console.log('ready');
-
-	elements.pageLibrary.load();
-});
-client.on('disconnect', function (data) {
-	console.log('client disconnecting', data);
-});
-client.on('end', function () {
-	console.log('client disconnected');
-});
-
-client.on('message', function (msg) {
-	if (msg.type == 45 || msg.type == 46) return;
-	console.log(msg);
-});
-
-client.on('library', function (library) {
-	library.saveToCache(function () {
-		console.log('Library saved to cache.');
-	});
-});
+window.addEventListener('polymer-ready', function () {
 
 var elementsList = [
 	'appPages',
 	'pageLibrary', 'pageAlbum', 'pageArtist', 'pageNowPlaying',
-	'connectDialog'
+	'connectDialog', 'connectDialogAddress', 'connectDialogRemember', 'connectDialogSubmit'
 ];
 var elements = {};
 for (var i = 0; i < elementsList.length; i++) {
@@ -48,29 +15,89 @@ for (var i = 0; i < elementsList.length; i++) {
 	elements[el] = document.getElementById(el);
 }
 
-elements.pageLibrary.client = client;
-elements.pageAlbum.client = client;
-elements.pageArtist.client = client;
-elements.pageNowPlaying.client = client;
-
 var clementine = {};
 window.clementine = clementine; // Export API
 
-clementine.client = client;
+clementine.connect = function (opts, done) {
+	console.log('Connecting to local clementine server...');
+	var client = ClementineClient(opts);
+
+	var doneCalled = false;
+
+	client.on('connect', function () {
+		console.log('connected');
+	});
+	client.on('ready', function () {
+		console.log('ready');
+
+		elements.pageLibrary.load();
+
+		if (done && !doneCalled) {
+			done();
+			doneCalled = true;
+		}
+	});
+	client.on('disconnect', function (data) {
+		console.log('client disconnecting', data);
+
+		if (done && !doneCalled) {
+			done({
+				reason: data.reason_disconnect
+			});
+			doneCalled = true;
+		}
+	});
+	client.on('end', function () {
+		console.log('client disconnected');
+	});
+
+	client.on('error', function (err) {
+		console.error('connection failed', err);
+
+		if (done && !doneCalled) {
+			done(err);
+			doneCalled = true;
+		}
+	});
+
+	client.on('message', function (msg) {
+		if (msg.type == 45 || msg.type == 46) return;
+		console.log(msg);
+	});
+
+	client.on('library', function (library) {
+		library.saveToCache(function () {
+			console.log('Library saved to cache.');
+		});
+	});
+
+	this.client = client;
+	elements.pageLibrary.client = client;
+	elements.pageAlbum.client = client;
+	elements.pageArtist.client = client;
+	elements.pageNowPlaying.client = client;
+};
+
+clementine.disconnect = function () {
+	this.client.disconnect();
+	elements.connectDialog.disconnect();
+};
 
 clementine.openAlbum = function (data) {
 	elements.pageAlbum.model = data;
-	client.library.db.exec('SELECT title, album, artist, CAST(filename AS TEXT) AS filename FROM songs WHERE artist="'+data.artist+'" AND album="'+data.album+'" ORDER BY title', function (res) {
+	this.client.library.db.exec('SELECT title, album, artist, CAST(filename AS TEXT) AS filename FROM songs WHERE artist="'+data.artist+'" AND album="'+data.album+'" ORDER BY title', function (res) {
 		elements.pageAlbum.tracks = res.results[0].values;
 	});
 	elements.appPages.selected = 1;
 };
 
 clementine.openArtist = function (data) {
+	var that = this;
+
 	elements.pageArtist.model = data;
-	client.library.db.exec('SELECT title, album, artist, CAST(filename AS TEXT) AS filename FROM songs WHERE artist="'+data.artist+'" ORDER BY title', function (res) {
+	this.client.library.db.exec('SELECT title, album, artist, CAST(filename AS TEXT) AS filename FROM songs WHERE artist="'+data.artist+'" ORDER BY title', function (res) {
 		elements.pageArtist.tracks = res.results[0].values;
-		client.library.db.exec('SELECT album, artist, COUNT(*) AS tracks_nbr FROM songs WHERE artist="'+data.artist+'" GROUP BY album ORDER BY album', function (res) {
+		that.client.library.db.exec('SELECT album, artist, COUNT(*) AS tracks_nbr FROM songs WHERE artist="'+data.artist+'" GROUP BY album ORDER BY album', function (res) {
 			elements.pageArtist.albums = res.results[0].values;
 		});
 	});
@@ -86,10 +113,12 @@ clementine.goBack = function () {
 };
 
 clementine.playTrack = function (url) {
-	client.insert_urls(1, [url], { play_now: true });
+	this.client.insert_urls(1, [url], { play_now: true });
 };
 
 clementine.covers = covers;
+
+elements.connectDialog.open();
 
 });
 },{"album-cover":"/home/simon/public_html/clementine-remote-web/node_modules/album-cover/index.js","clementine-remote":"/home/simon/public_html/clementine-remote-web/node_modules/clementine-remote/browser.js"}],"/home/simon/public_html/clementine-remote-web/node_modules/album-cover/index.js":[function(require,module,exports){
@@ -1593,7 +1622,7 @@ function Client(opts) {
 
 	var socket = net.connect({
 		host: opts.host,
-		port: opts.port
+		port: opts.port || 5500
 	});
 	Connection.call(this, socket);
 
@@ -1621,7 +1650,9 @@ function Client(opts) {
 	this.on('message', function (msg) {
 		switch (msg.type) {
 			case MsgType.DISCONNECT:
-				that.emit('disconnect', msg.response_disconnect);
+				that.emit('disconnect', {
+					reason_disconnect: proto.getReasonDisconnectName(msg.response_disconnect.reason_disconnect)
+				});
 				break;
 			case MsgType.SET_VOLUME:
 				that.volume = msg.request_set_volume.volume;
@@ -1977,22 +2008,23 @@ var proto = {
 
 var Message = proto.Message;
 
-proto.getMsgTypeName = function (typeIndex) {
-	for (var name in proto.MsgType) {
-		if (proto.MsgType[name] === typeIndex) {
+function getConstName(value, obj) {
+	for (var name in obj) {
+		if (obj[name] === value) {
 			return name;
 		}
 	}
 	return '';
-};
+}
 
+proto.getMsgTypeName = function (typeIndex) {
+	return getConstName(typeIndex, proto.MsgType);
+};
 proto.getEngineStateName = function (stateIndex) {
-	for (var name in proto.EngineState) {
-		if (proto.EngineState[name] === stateIndex) {
-			return name;
-		}
-	}
-	return '';
+	return getConstName(stateIndex, proto.EngineState);
+};
+proto.getReasonDisconnectName = function (reasonIndex) {
+	return getConstName(reasonIndex, proto.ReasonDisconnect);
 };
 
 module.exports = proto;

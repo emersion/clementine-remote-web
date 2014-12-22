@@ -24,3 +24,7 @@ paper-tabs::shadow #selectionBar {
 paper-dropdown {
     color: black;
 }
+
+paper-input-decorator::shadow .focused-underline {
+	background-color: #db6835 !important;
+}
