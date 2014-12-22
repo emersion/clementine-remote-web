@@ -491,7 +491,13 @@ paper-dropdown {
 			</core-toolbar>
 
 			<core-pages selected="{{selectedTab}}" flex>
-				<div>Not implemented.</div>
+				<div style="overflow: auto;" fit>
+					<core-list id="recent" selectionEnabled fit>
+						<template>
+							<library-track class="{{ {selected: selected} | tokenList }}" model="{{model}}"></library-track>
+						</template>
+					</core-list>
+				</div>
 				<div style="overflow: auto;" fit>
 					<core-list id="artists" selectionEnabled fit grid width="150" height="150">
 						<template>
@@ -547,6 +553,13 @@ paper-dropdown {
 
 				switch (that.selectedTab) {
 					case 0:
+						if (!that.$.recent.data) {
+							client.library.db.exec('SELECT title, album, artist, CAST(filename AS TEXT) AS filename FROM songs ORDER BY lastplayed LIMIT 0,100', function (res) {
+								that.$.recent.data = res.results[0].values;
+								that.$.loadingLibraryToast.dismiss();
+							});
+							that.$.loadingLibraryToast.show();
+						}
 						break;
 					case 1:
 						if (!that.$.artists.data) {
