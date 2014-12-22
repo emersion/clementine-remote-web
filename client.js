@@ -16,9 +16,7 @@ client.on('connect', function () {
 client.on('ready', function () {
 	console.log('ready');
 
-	if (elements.appPages.selected == 0) {
-		elements.pageLibrary.load();
-	}
+	elements.pageLibrary.load();
 });
 client.on('disconnect', function (data) {
 	console.log('client disconnecting', data);
@@ -41,7 +39,6 @@ client.on('library', function (library) {
 var elementsList = [
 	'appPages',
 	'pageLibrary', 'pageAlbum', 'pageArtist', 'pageNowPlaying',
-	'nowPlaying',
 	'connectDialog'
 ];
 var elements = {};
