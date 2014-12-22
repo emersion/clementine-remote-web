@@ -550,6 +550,8 @@ paper-dropdown {
 
 			var libraryLoaded = function () {
 				if (reload) {
+					that.$.recent.data = null;
+					that.$.artists.data = null;
 					that.$.albums.data = null;
 					that.$.tracks.data = null;
 				}
@@ -557,7 +559,7 @@ paper-dropdown {
 				switch (that.selectedTab) {
 					case 0:
 						if (!that.$.recent.data) {
-							client.library.db.exec('SELECT title, album, artist, CAST(filename AS TEXT) AS filename FROM songs ORDER BY lastplayed LIMIT 0,100', function (res) {
+							client.library.db.exec('SELECT title, album, artist, CAST(filename AS TEXT) AS filename FROM songs ORDER BY lastplayed DESC LIMIT 0,100', function (res) {
 								that.$.recent.data = res.results[0].values;
 								that.$.loadingLibraryToast.dismiss();
 							});
