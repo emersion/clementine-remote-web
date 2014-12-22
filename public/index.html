@@ -32,7 +32,7 @@
 
 	<meta name="mobile-web-app-capable" content="yes">
 	<link rel="manifest" href="/manifest.json">
-	<link rel="icon" href="https://github.com/clementine-player/Clementine/raw/master/data/icon.svg">
+	<link rel="icon" href="/assets/icon.svg">
 
 	<script src="/assets/bundle.js"></script>
 </head>
@@ -477,6 +477,7 @@ paper-dropdown {
 					<paper-dropdown class="dropdown" halign="right">
 						<div class="menu">
 							<paper-item id="disconnectBtn">Disconnect</paper-item>
+							<paper-item id="installBtn">Add app to homescreen</paper-item>
 							<paper-item id="aboutBtn">About</paper-item>
 						</div>
 					</paper-dropdown>
@@ -543,6 +544,20 @@ paper-dropdown {
 			this.$.aboutBtn.addEventListener('click', function () {
 				window.open('https://github.com/emersion/clementine-remote-web');
 			});
+
+			if (navigator.mozApps) {
+				this.$.installBtn.addEventListener('click', function () {
+					var req = navigator.mozApps.installPackage(window.location.href+'/manifest.webapp');
+					req.onsuccess = function () {
+						console.log('App installed.');
+					};
+					req.onerror = function (err) {
+						console.warn('Could not install app', this.error);
+					};
+				});
+			} else {
+				this.$.installBtn.style.display = 'none';
+			}
 		},
 		load: function (reload) {
 			var client = this.client;
@@ -892,7 +907,6 @@ paper-slider::shadow #sliderKnobInner {
 
 <polymer-element name="connect-dialog" constructor="ConnectDialog">
 	<template>
-
 		<paper-action-dialog id="connectDialog" transition="core-transition-center" backdrop autoclosedisabled>
 			<style>
 			paper-input /deep/ .focused-underline {

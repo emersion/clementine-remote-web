@@ -1,3 +1,4 @@
+var fs = require('fs');
 var express = require('express');
 var netApi = require('net-browserify/api');
 
@@ -8,6 +9,10 @@ var app = express();
 app.set('port', process.env.PORT || 3000);
 server.addListener('request', app);
 
+app.get('/manifest.webapp', function (req, res, next) {
+	res.type('application/x-web-app-manifest+json');
+	next();
+});
 app.use(express.static(__dirname+'/public'));
 app.use(netApi(server, {
 	to: [{ host: 'localhost', port: 5500 }]

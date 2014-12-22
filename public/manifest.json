@@ -5,16 +5,26 @@
 	"orientation": "portait",
 	"icons": [
 		{
-			"src": "https://github.com/clementine-player/Clementine/raw/master/data/icon.svg",
+			"src": "/assets/icon.svg",
 			"type": "image/svg+xml"
 		},
 		{
-			"src": "https://github.com/clementine-player/Clementine/raw/master/data/icon.png",
+			"src": "/assets/icon-48.png",
+			"type": "image/png",
+			"sizes": "48x48"
+		},
+		{
+			"src": "/assets/icon-64.png",
 			"type": "image/png",
 			"sizes": "64x64"
 		},
 		{
-			"src": "https://github.com/clementine-player/Clementine/raw/master/data/icon_large.png",
+			"src": "/assets/icon-128.png",
+			"type": "image/png",
+			"sizes": "128x128"
+		},
+		{
+			"src": "/assets/icon-512.png",
 			"type": "image/png",
 			"sizes": "512x512"
 		}

@@ -1,0 +1,17 @@
+{
+  "name": "Clementine",
+  "description": "A web interface for Clementine",
+  "type": "web",
+  "launch_path": "/",
+  "icons": {
+    "48": "/assets/icon-48.png",
+    "64": "/assets/icon-64.png",
+    "128": "/assets/icon-128.png",
+    "512": "/assets/icon-512.png"
+  },
+  "developer": {
+    "name": "Emersion",
+    "url": "http://emersion.fr"
+  },
+  "default_locale": "en"
+}
