@@ -1717,6 +1717,10 @@ for (var i = 0; i < actions.length; i++) {
 	setAction(actions[i]);
 }
 
+Client.prototype.set_track_position = function (pos) {
+	this.write(this.builder.set_track_position(pos));
+};
+
 Client.prototype.change_song = function (playlist, song) {
 	this.write(this.builder.change_song(playlist, song));
 };
@@ -1843,6 +1847,14 @@ MessageBuilder.prototype.set_volume = function () {
 		type: 'SET_VOLUME',
 		request_set_volume: {
 			volume: this.server.volume
+		}
+	};
+};
+MessageBuilder.prototype.set_track_position = function (pos) {
+	return {
+		type: 'SET_TRACK_POSITION',
+		request_set_track_position: {
+			position: pos
 		}
 	};
 };

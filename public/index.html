@@ -838,6 +838,11 @@ paper-slider::shadow #sliderKnobInner {
 			this.$.nextBtn.addEventListener('click', function () {
 				that.client.next();
 			});
+
+			this.$.progress.addEventListener('change', function (e) {
+				var pos = that.$.progress.value / 100 * that.client.song.length;
+				that.client.set_track_position(Math.round(pos));
+			});
 		},
 		clientChanged: function () {
 			var that = this;
@@ -868,7 +873,9 @@ paper-slider::shadow #sliderKnobInner {
 				that.$.playpauseBtn.icon = 'av:play-arrow';
 			});
 			client.on('position', function (pos) {
-				that.$.progress.value = pos / client.song.length * 100;
+				if (!that.$.progress.dragging) {
+					that.$.progress.value = pos / client.song.length * 100;
+				}
 			});
 		},
 		goBack: function () {
