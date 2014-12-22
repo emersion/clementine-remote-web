@@ -679,78 +679,210 @@ core-toolbar #title {
 	</script>
 </polymer-element>
 
-<core-pages id="appPages" selected="0" fit>
+<polymer-element name="now-playing-page" constructor="NowPlayingPage" attributes="client">
+	<template>
+		<style>
+/* TODO: global style */
+core-toolbar {
+	background-color: #db6835;
+	color: white;
+}
+paper-tabs::shadow #selectionBar {
+	background-color: white;
+}
 
-<library-page id="pageLibrary" fit></library-page>
+paper-dropdown {
+    color: black;
+}
 
-<album-page id="pageAlbum" fit></album-page>
+#track, #controls {
+	background-color: black;
+}
+#track {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+#track .subtitle {
+	display: inline-block;
+	margin-left: 10px;
+	opacity: 0.7;
+}
+#playlistCtn {
+	overflow: auto;
+}
+.playlist-item {
+	padding: 10px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+.playlist-item.selected {
+	background-color: rgba(255, 255, 255, 0.15);
+}
+.playlist-item .title {
+	font-size: 1.1em;
+}
+.playlist-item .artist {
+	opacity: 0.7;
+}
+#controls {
+	width: 100%;
+	height: 90px;
+}
+#controls paper-slider {
+	width: 100%;
+}
+#controls #playpauseBtn::shadow core-icon {
+	width: 48px;
+	height: 48px;
+}
 
-<artist-page id="pageArtist" fit></artist-page>
+#cover {
+	background-size: contain;
+	background-position: center center;
+	background-repeat: no-repeat;
+}
 
-<div id="pagePlaying" fit layout vertical>
-	<core-toolbar>
-		<paper-icon-button id="pagePlayingBack" icon="arrow-back"></paper-icon-button>
+paper-slider::shadow #sliderBar::shadow #activeProgress {
+	background-color: #db6835;
+}
+paper-slider::shadow #sliderKnobInner {
+	background-color: #db6835;
+}
+		</style>
+		<div fit layout vertical>
+			<core-toolbar>
+				<paper-icon-button icon="arrow-back" on-click="{{goBack}}"></paper-icon-button>
 
-		<span flex>Now playing</span>
+				<span flex>Now playing</span>
 
-		<paper-icon-button icon="favorite-outline"></paper-icon-button>
-		<paper-menu-button>
-			<paper-icon-button icon="more-vert"></paper-icon-button>
-			<paper-dropdown class="dropdown" halign="right">
-				<div class="menu">
-					<paper-item>Share</paper-item>
-					<paper-item>Settings</paper-item>
-					<paper-item>About</paper-item>
-				</div>
-			</paper-dropdown>
-		</paper-menu-button>
-	</core-toolbar>
-
-	<core-toolbar id="pagePlayingTrack">
-		<span flex>
-			<span id="pagePlayingTitle">Rolling in the Deep</span>
-			<span id="pagePlayingSubtitle" class="subtitle">Lol</span>
-		</span>
-
-		<paper-icon-button id="pagePlayingSwitch" icon="av:queue-music"></paper-icon-button>
-	</core-toolbar>
-
-	<core-pages id="pagePlayingPages" selected="0" flex>
-		<div id="pagePlayingCover" fit></div>
-		<div id="pagePlayingPlaylistCtn" fit>
-			<core-list id="pagePlayingPlaylist" selectionEnabled fit>
-				<template>
-					<core-item label="{{model.title}}" class="playlist-item {{ {selected: selected} | tokenList }}" layout horizontal>
-						<div flex>
-							<div class="title">{{model.title}}</div>
-							<div class="artist">{{model.artist || ''}}</div>
+				<paper-icon-button icon="favorite-outline"></paper-icon-button>
+				<paper-menu-button>
+					<paper-icon-button icon="more-vert"></paper-icon-button>
+					<paper-dropdown class="dropdown" halign="right">
+						<div class="menu">
+							<paper-item>Share</paper-item>
+							<paper-item>Settings</paper-item>
+							<paper-item>About</paper-item>
 						</div>
-						<paper-icon-button icon="more-vert"></paper-icon-button>
-					</core-item>
-				</template>
-			</core-list>
+					</paper-dropdown>
+				</paper-menu-button>
+			</core-toolbar>
+
+			<core-toolbar id="track">
+				<span flex>
+					<span id="title">{{song.title || 'Unknown'}}</span>
+					<span id="subtitle" class="subtitle">{{song.artist || ''}} - {{song.album || ''}}</span>
+				</span>
+
+				<paper-icon-button id="playlistBtn" icon="av:queue-music"></paper-icon-button>
+			</core-toolbar>
+
+			<core-pages id="pages" selected="{{selectedPage}}" flex>
+				<div id="cover" fit></div>
+				<div id="playlistCtn" fit>
+					<core-list id="playlist" selectionEnabled fit>
+						<template>
+							<core-item label="{{model.title}}" class="playlist-item {{ {selected: selected} | tokenList }}" layout horizontal>
+								<div flex>
+									<div class="title">{{model.title}}</div>
+									<div class="artist">{{model.artist || ''}}</div>
+								</div>
+								<paper-icon-button icon="more-vert"></paper-icon-button>
+							</core-item>
+						</template>
+					</core-list>
+				</div>
+			</core-pages>
+
+			<core-toolbar id="controls">
+				<div vertical layout fit>
+					<div><paper-slider id="progress" value="0"></paper-slider></div>
+					<div horizontal center-justified layout>
+						<div self-center>
+							<paper-icon-button id="previousBtn" icon="av:fast-rewind" ></paper-icon-button>
+						</div>
+						<div self-center>
+							<paper-icon-button id="playpauseBtn" icon="av:play-arrow" ></paper-icon-button>
+						</div>
+						<div self-center>
+							<paper-icon-button id="nextBtn" icon="av:fast-forward"></paper-icon-button>
+						</div>
+					</div>
+				</div>
+			</core-toolbar>
 		</div>
-	</core-pages>
+	</template>
+	<script>
+	Polymer('now-playing-page', {
+		selectedPage: 0,
+		song: {},
+		ready: function () {
+			var that = this;
 
-	<core-toolbar id="pagePlayingControls">
-		<div vertical layout fit>
-			<div><paper-slider id="pagePlayingProgress" value="0"></paper-slider></div>
-			<div horizontal center-justified layout>
-				<div self-center>
-					<paper-icon-button id="nowPlayingPrevious" icon="av:fast-rewind"></paper-icon-button>
-				</div>
-				<div self-center>
-					<paper-icon-button id="nowPlayingPlaypause" icon="av:play-arrow"></paper-icon-button>
-				</div>
-				<div self-center>
-					<paper-icon-button id="nowPlayingNext" icon="av:fast-forward"></paper-icon-button>
-				</div>
-			</div>
-		</div>
+			this.$.playlist.addEventListener('core-activate', function () {
+				var sel = that.$.playlist.selection;
+				if (sel) {
+					that.client.change_song(1, sel.index);
+				}
+			});
+			this.$.playlistBtn.addEventListener('click', function () {
+				that.$.pages.selected = (that.$.pages.selected + 1) % 2;
+			});
 
-	</core-toolbar>
-</div>
+			this.$.previousBtn.addEventListener('click', function () {
+				that.client.previous();
+			});
+			this.$.playpauseBtn.addEventListener('click', function () {
+				that.client.playpause();
+			});
+			this.$.nextBtn.addEventListener('click', function () {
+				that.client.next();
+			});
+		},
+		clientChanged: function () {
+			var that = this;
+			var client = this.client;
 
+			client.on('ready', function () {
+				that.$.playlist.data = client.songs;
+			});
+
+			client.on('song', function (song) {
+				that.song = song;
+
+				if (song.art) {
+					var src = 'data:image/*;base64,'+song.art.toBase64();
+					that.$.cover.style.backgroundImage = 'url("'+src+'")';
+				} else {
+					that.$.cover.style.backgroundImage = 'none'; //TODO: default cover
+				}
+
+				if (that.$.playlist.data) {
+					that.$.playlist.selectItem(song.index);
+				}
+			});
+			client.on('play', function () {
+				that.$.playpauseBtn.icon = 'av:pause';
+			});
+			client.on('pause', function () {
+				that.$.playpauseBtn.icon = 'av:play-arrow';
+			});
+			client.on('position', function (pos) {
+				that.$.progress.value = pos / client.song.length * 100;
+			});
+		},
+		goBack: function () {
+			clementine.goBack();
+		}
+	});
+	</script>
+</polymer-element>
+
+<core-pages id="appPages" selected="0" fit>
+	<library-page id="pageLibrary" fit></library-page>
+	<album-page id="pageAlbum" fit></album-page>
+	<artist-page id="pageArtist" fit></artist-page>
+	<now-playing-page id="pageNowPlaying" fit></now-playing-page>
 </core-pages>
 
 <paper-action-dialog id="connectDialog" transition="core-transition-center" backdrop heading="Clementine" autoclosedisabled>

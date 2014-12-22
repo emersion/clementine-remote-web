@@ -17,8 +17,6 @@ client.on('connect', function () {
 client.on('ready', function () {
 	console.log('ready');
 
-	elements.pagePlayingPlaylist.data = client.songs;
-
 	if (elements.appPages.selected == 0) {
 		elements.pageLibrary.load();
 	}
@@ -43,11 +41,7 @@ client.on('library', function (library) {
 
 var elementsList = [
 	'appPages',
-	'pageLibrary', 'pageAlbum', 'pageArtist',
-	'pagePlayingBack',
-	'pagePlayingTitle', 'pagePlayingSubtitle', 'pagePlayingCover', 'pagePlayingPlaylist',
-	'nowPlayingPrevious', 'nowPlayingPlaypause', 'nowPlayingNext',
-	'pagePlayingProgress',
+	'pageLibrary', 'pageAlbum', 'pageArtist', 'pageNowPlaying',
 	'nowPlaying',
 	'connectDialog'
 ];
@@ -60,60 +54,7 @@ for (var i = 0; i < elementsList.length; i++) {
 elements.pageLibrary.client = client;
 elements.pageAlbum.client = client;
 elements.pageArtist.client = client;
-
-// Now playing page
-client.on('song', function (song) {
-	console.log('Song', song);
-	elements.pagePlayingTitle.innerHTML = song.title;
-	elements.pagePlayingSubtitle.innerHTML = (song.artist || '')+((song.artist && song.album) ? ' - ' : '')+(song.album || '');
-
-	if (song.art) {
-		var src = 'data:image/*;base64,'+song.art.toBase64();
-		elements.pagePlayingCover.style.backgroundImage = 'url("'+src+'")';
-	} else {
-		elements.pagePlayingCover.style.backgroundImage = 'none'; //TODO: default cover
-	}
-
-	if (elements.pagePlayingPlaylist.data) {
-		elements.pagePlayingPlaylist.selectItem(song.index);
-	}
-});
-client.on('play', function () {
-	elements.nowPlayingPlaypause.icon = 'av:pause';
-});
-client.on('pause', function () {
-	elements.nowPlayingPlaypause.icon = 'av:play-arrow';
-});
-client.on('position', function (pos) {
-	elements.pagePlayingProgress.value = pos / client.song.length * 100;
-});
-
-elements.pagePlayingBack.addEventListener('click', function () {
-	elements.appPages.selected = 0;
-});
-
-elements.nowPlayingPlaypause.addEventListener('click', function () {
-	client.playpause();
-});
-elements.nowPlayingPrevious.addEventListener('click', function () {
-	client.previous();
-});
-elements.nowPlayingNext.addEventListener('click', function () {
-	client.next();
-});
-
-elements.pagePlayingPlaylist.addEventListener('core-activate', function () {
-	var sel = elements.pagePlayingPlaylist.selection;
-	if (sel) {
-		client.change_song(1, sel.index);
-	}
-});
-
-var pagePlayingPages = document.getElementById('pagePlayingPages');
-var pagePlayingSwitch = document.getElementById('pagePlayingSwitch');
-pagePlayingSwitch.addEventListener('click', function () {
-	pagePlayingPages.selected = (pagePlayingPages.selected + 1) % 2;
-});
+elements.pageNowPlaying.client = client;
 
 var clementine = {};
 window.clementine = clementine; // Export API
