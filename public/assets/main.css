@@ -8,7 +8,7 @@ body {
 	-webkit-tap-highlight-color: transparent;
 }
 
-#pageMain, #pageAlbum, #pagePlaying {
+body, #pageLibrary, #pageAlbum, #pageArtist, #pagePlaying {
 	background-color: black;
 	color: white;
 }
@@ -27,6 +27,13 @@ paper-progress::shadow #progressContainer {
 paper-progress::shadow #activeProgress {
 	background-color: white;
 	opacity: 0.5;
+}
+
+paper-slider#pagePlayingProgress::shadow #sliderBar::shadow #activeProgress {
+	background-color: #db6835;
+}
+paper-slider#pagePlayingProgress::shadow #sliderKnobInner {
+	background-color: #db6835;
 }
 
 paper-dropdown {
@@ -80,10 +87,4 @@ paper-dropdown {
 }
 #pagePlaying paper-slider#pagePlayingProgress {
 	width: 100%;
-}
-paper-slider#pagePlayingProgress::shadow #sliderBar::shadow #activeProgress {
-	background-color: #db6835;
-}
-paper-slider#pagePlayingProgress::shadow #sliderKnobInner {
-	background-color: #db6835;
 }

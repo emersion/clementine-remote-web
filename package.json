@@ -24,6 +24,7 @@
   },
   "homepage": "https://github.com/emersion/clementine-remote-web",
   "dependencies": {
+    "album-cover": "0.0.2",
     "clementine-remote": "^0.3.4",
     "express": "^4.10.6",
     "extend": "^2.0.0",

@@ -1,4 +1,5 @@
 var ClementineClient = require('clementine-remote').Client;
+var covers = require('album-cover')('3f6675c78c4054c7ee6e361a06ec6cff');
 
 window.addEventListener('polymer-ready', function (e) {
 
@@ -18,7 +19,7 @@ client.on('ready', function () {
 	elements.pagePlayingPlaylist.data = client.songs;
 
 	if (elements.appPages.selected == 0) {
-		ensureLibraryLoaded();
+		elements.pageLibrary.load();
 	}
 });
 client.on('disconnect', function (data) {
@@ -29,7 +30,7 @@ client.on('end', function () {
 });
 
 client.on('message', function (msg) {
-	if (msg.type == 45) return;
+	if (msg.type == 45 || msg.type == 46) return;
 	console.log(msg);
 });
 
@@ -41,14 +42,13 @@ client.on('library', function (library) {
 
 var elementsList = [
 	'appPages',
-	'refreshLibraryBtn', 'mainTracks', 'mainAlbums', 'mainPlayingToolbar',
-	'pageAlbum',
+	'pageLibrary', 'pageAlbum', 'pageArtist',
 	'pagePlayingBack',
 	'pagePlayingTitle', 'pagePlayingSubtitle', 'pagePlayingCover', 'pagePlayingPlaylist',
 	'nowPlayingPrevious', 'nowPlayingPlaypause', 'nowPlayingNext',
 	'pagePlayingProgress',
 	'nowPlaying',
-	'downloadingLibraryToast', 'connectDialog'
+	'connectDialog'
 ];
 var elements = {};
 for (var i = 0; i < elementsList.length; i++) {
@@ -56,9 +56,11 @@ for (var i = 0; i < elementsList.length; i++) {
 	elements[el] = document.getElementById(el);
 }
 
-elements.mainPlayingToolbar.client = client;
+elements.pageLibrary.client = client;
 elements.pageAlbum.client = client;
+elements.pageArtist.client = client;
 
+// Now playing page
 client.on('song', function (song) {
 	console.log('Song', song);
 	elements.pagePlayingTitle.innerHTML = song.title;
@@ -85,10 +87,6 @@ client.on('position', function (pos) {
 	elements.pagePlayingProgress.value = pos / client.song.length * 100;
 });
 
-elements.refreshLibraryBtn.addEventListener('click', function () {
-	ensureLibraryLoaded(true);
-});
-
 elements.pagePlayingBack.addEventListener('click', function () {
 	elements.appPages.selected = 0;
 });
@@ -110,68 +108,6 @@ elements.pagePlayingPlaylist.addEventListener('core-activate', function () {
 	}
 });
 
-// Tabs
-var tabs = document.getElementById('mainTabs');
-var pages = document.getElementById('mainPages');
-var ensureLibraryLoaded = function (reload) {
-	var libraryLoaded = function () {
-		if (reload) {
-			elements.mainAlbums.data = null;
-			elements.mainTracks.data = null;
-		}
-
-		switch (parseInt(pages.selected)) {
-			case 0:
-				break;
-			case 1:
-				break;
-			case 2:
-				if (!elements.mainAlbums.data) {
-					client.library.db.exec('SELECT album, artist, COUNT(*) AS tracks_nbr, art_automatic, art_manual FROM songs GROUP BY album ORDER BY album', function (res) {
-						elements.mainAlbums.data = res.results[0].values;
-						elements.downloadingLibraryToast.dismiss();
-					});
-					elements.downloadingLibraryToast.show();
-				}
-				break;
-			case 3:
-				if (!elements.mainTracks.data) {
-					client.library.db.exec('SELECT title, album, artist, CAST(filename AS TEXT) AS filename FROM songs ORDER BY title', function (res) {
-						elements.mainTracks.data = res.results[0].values;
-						elements.downloadingLibraryToast.dismiss();
-					});
-					elements.downloadingLibraryToast.show();
-				}
-				break;
-		}
-	};
-
-	if (client.library.db.opened && !reload) {
-		libraryLoaded();
-	} else if (client.library.isCached() && !reload) {
-		client.library.openFromCache(function () {
-			elements.downloadingLibraryToast.dismiss();
-			libraryLoaded();
-		});
-		elements.downloadingLibraryToast.show();
-	} else {
-		client.once('library', function (library) {
-			elements.downloadingLibraryToast.dismiss();
-			libraryLoaded();
-		});
-		client.get_library();
-		elements.downloadingLibraryToast.show();
-	}
-};
-tabs.addEventListener('core-select', function () {
-	if (pages.selected == tabs.selected) {
-		return;
-	}
-	pages.selected = tabs.selected;
-
-	ensureLibraryLoaded();
-});
-
 var pagePlayingPages = document.getElementById('pagePlayingPages');
 var pagePlayingSwitch = document.getElementById('pagePlayingSwitch');
 pagePlayingSwitch.addEventListener('click', function () {
@@ -191,8 +127,19 @@ clementine.openAlbum = function (data) {
 	elements.appPages.selected = 1;
 };
 
-clementine.openNowPlaying = function () {
+clementine.openArtist = function (data) {
+	elements.pageArtist.model = data;
+	client.library.db.exec('SELECT title, album, artist, CAST(filename AS TEXT) AS filename FROM songs WHERE artist="'+data.artist+'" ORDER BY title', function (res) {
+		elements.pageArtist.tracks = res.results[0].values;
+		client.library.db.exec('SELECT album, artist, COUNT(*) AS tracks_nbr FROM songs WHERE artist="'+data.artist+'" GROUP BY album ORDER BY album', function (res) {
+			elements.pageArtist.albums = res.results[0].values;
+		});
+	});
 	elements.appPages.selected = 2;
+};
+
+clementine.openNowPlaying = function () {
+	elements.appPages.selected = 3;
 };
 
 clementine.goBack = function () {
@@ -202,5 +149,7 @@ clementine.goBack = function () {
 clementine.playTrack = function (url) {
 	client.insert_urls(1, [url], { play_now: true });
 };
+
+clementine.covers = covers;
 
 });

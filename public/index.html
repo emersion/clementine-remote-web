@@ -37,6 +37,90 @@
 </head>
 <body fullbleed vertical layout unresolved>
 
+<polymer-element name="library-artist" constructor="LibraryArtist" attributes="model">
+	<template>
+		<style>
+core-item {
+	width: 145px;
+	height: 140px;
+	margin-top: 5px;
+	border-bottom: 5px solid transparent;
+}
+core-item .cover {
+	/*background-image: url("http://ecx.images-amazon.com/images/I/71evDOB6QhL._SL1417_.jpg");*/
+	background-size: cover;
+	background-position: center center;
+}
+/* @see http://nicolasgallagher.com/css-background-image-hacks/#emulating-background-opacity */
+core-item .cover.no-cover::before {
+	content: "";
+	position: absolute;
+	z-index: -1;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+
+	background-image: url("/assets/person.svg");
+	background-size: contain;
+	background-position: center center;
+	background-repeat: no-repeat;
+	opacity: 0.2;
+}
+core-item .footer {
+	background-color: #2D2D2D;
+	cursor: pointer;
+}
+core-item .footer .info {
+	padding: 7px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+core-item .footer .info .subtitle {
+	color: gray;
+}
+		</style>
+		<core-item class="{{ {selected: selected} | tokenList }}" layout vertical>
+			<paper-ripple id="cover" class="cover no-cover" flex on-click="{{onClick}}"></paper-ripple>
+			<div class="footer" layout horizontal>
+				<div class="info" flex layout vertical on-click="{{onClick}}">
+					<div class="title">{{model[0] || 'Unknown'}}</div>
+					<div class="subtitle">
+						<span class="tracks">{{model[1]}} tracks</span>
+					</div>
+				</div>
+				<div class="actions" horizontal layout end>
+					<paper-icon-button icon="more-vert"></paper-icon-button>
+				</div>
+			</div>
+		</core-item>
+	</template>
+	<script>
+	Polymer('library-artist', {
+		loadCover: function () {
+			var that = this;
+
+			this.$.cover.style.backgroundImage = 'none';
+			this.$.cover.classList.add('no-cover');
+			clementine.covers.search({
+				artist: this.model[0]
+			}, function (err, url) {
+				if (url) {
+					that.$.cover.style.backgroundImage = 'url("'+url+'")';
+					that.$.cover.classList.remove('no-cover');
+				}
+			});
+		},
+		onClick: function () {
+			clementine.openArtist({
+				artist: this.model[0]
+			});
+		}
+	});
+	</script>
+</polymer-element>
+
 <polymer-element name="library-album" constructor="LibraryAlbum" attributes="model">
 	<template>
 		<style>
@@ -47,7 +131,6 @@
 	border-bottom: 5px solid transparent;
 }
 .album-item .cover {
-	/*background-image: url("http://ecx.images-amazon.com/images/I/71evDOB6QhL._SL1417_.jpg");*/
 	background-size: cover;
 	background-position: center center;
 }
@@ -69,6 +152,7 @@
 }
 .album-item .footer {
 	background-color: #2D2D2D;
+	cursor: pointer;
 }
 .album-item .footer .info {
 	padding: 7px;
@@ -81,12 +165,12 @@
 }
 		</style>
 		<core-item class="album-item {{ {selected: selected} | tokenList }}" layout vertical>
-			<paper-ripple class="cover no-cover" flex on-click="{{onClick}}"></paper-ripple>
+			<paper-ripple id="cover" class="cover no-cover" flex on-click="{{onClick}}"></paper-ripple>
 			<div class="footer" layout horizontal>
 				<div class="info" flex layout vertical on-click="{{onClick}}">
 					<div class="title">{{model[0] || 'Unknown'}}</div>
 					<div class="subtitle">
-						<span class="artist">{{model[1]}}</span> | <span class="tracks">{{model[2]}} tracks</span>
+						<span class="artist">{{model[1]}}</span>{{ (model[1] && model[2]) ? ' | ' : '' }}<span class="tracks">{{model[2]}} tracks</span>
 					</div>
 				</div>
 				<div class="actions" horizontal layout end>
@@ -97,6 +181,18 @@
 	</template>
 	<script>
 	Polymer('library-album', {
+		loadCover: function () {
+			var that = this;
+			clementine.covers.search({
+				artist: this.model[1],
+				album: this.model[0]
+			}, function (err, url) {
+				if (url) {
+					that.$.cover.style.backgroundImage = 'url("'+url+'")';
+					that.$.cover.classList.remove('no-cover');
+				}
+			});
+		},
 		onClick: function () {
 			clementine.openAlbum({
 				album: this.model[0],
@@ -110,25 +206,26 @@
 <polymer-element name="library-track" constructor="LibraryTrack" attributes="model">
 	<template>
 		<style>
-.track {
+#track {
 	padding: 10px;
 	border-bottom: 1px solid rgba(255, 255, 255, 0.15);
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
+	cursor: pointer;
 }
-.track.selected {
+#track.selected {
 	background-color: rgba(255, 255, 255, 0.15);
 }
-.track .title {
+#track .title {
 	font-size: 1.1em;
 }
-.track .artist {
+#track .artist {
 	opacity: 0.7;
 }
 		</style>
-		<core-item label="{{model.title}}" class="track" layout horizontal>
-			<div on-click="{{onClick}}" flex>
+		<core-item label="{{model.title}}" id="track" layout horizontal>
+			<div flex>
 				<div class="title">{{model[0] || 'Unknown'}}</div>
 				<div class="artist">{{model[2] || ''}}</div>
 			</div>
@@ -137,8 +234,11 @@
 	</template>
 	<script>
 	Polymer('library-track', {
-		onClick: function () {
-			clementine.playTrack(this.model[3]);
+		ready: function () {
+			var that = this;
+			this.$.track.addEventListener('click', function () {
+				clementine.playTrack(that.model[3]);
+			});
 		}
 	});
 	</script>
@@ -147,10 +247,9 @@
 <polymer-element name="album-page" constructor="AlbumPage" attributes="model tracks client">
 	<template>
 		<style>
-core-toolbar {
+#toolbar {
 	background-color: #db6835;
 	color: white;
-	background-image: url("http://ecx.images-amazon.com/images/I/71evDOB6QhL._SL1417_.jpg");
 	background-size: cover;
 	background-position: center center;
 	height: 300px;
@@ -158,11 +257,11 @@ core-toolbar {
 	-moz-transition: 300ms all;
 	transition: 300ms all;
 }
-core-toolbar.no-cover {
+#toolbar.no-cover {
 	height: 128px;
-	background-image: none;
+	background-image: none !important;
 }
-core-toolbar.condensed {
+#toolbar.condensed {
 	height: 128px;
 }
 paper-tabs::shadow #selectionBar {
@@ -170,7 +269,7 @@ paper-tabs::shadow #selectionBar {
 }
 		</style>
 		<div fit layout vertical>
-			<core-toolbar id="toolbar" class="no-cover">
+			<core-toolbar id="toolbar" class="no-cover condensed">
 				<paper-icon-button icon="arrow-back" on-click="{{goBack}}"></paper-icon-button>
 
 				<span flex>{{model.album}}</span>
@@ -198,7 +297,7 @@ paper-tabs::shadow #selectionBar {
 	<script>
 	Polymer('album-page', {
 		selectedTab: 1,
-		model: { album: 'Unknown', artist: 'Unknown' },
+		model: { album: '', artist: '' },
 		tracks: [],
 		goBack: function () {
 			clementine.goBack();
@@ -209,9 +308,25 @@ paper-tabs::shadow #selectionBar {
 		clientChanged: function () {
 			this.$.playingToolbar.client = this.client;
 		},
+		modelChanged: function () {
+			var that = this;
+
+			this.$.toolbar.classList.add('no-cover');
+			clementine.covers.search({
+				artist: this.model.artist,
+				album: this.model.album,
+				size: 'mega'
+			}, function (err, url) {
+				if (url) {
+					that.$.toolbar.style.backgroundImage = 'url("'+url+'")';
+					that.$.toolbar.classList.remove('no-cover');
+				}
+			});
+		},
 		ready: function () {
 			var that = this;
-			var readjusting = false;
+			// TODO: scroll not working well
+			/*var readjusting = false;
 			this.$.tracks.addEventListener('scroll', function (e) {
 				if (readjusting) return;
 
@@ -236,7 +351,255 @@ paper-tabs::shadow #selectionBar {
 						readjusting = false;
 					}, 0);
 				}
+			});*/
+		}
+	});
+	</script>
+</polymer-element>
+
+<polymer-element name="artist-page" constructor="ArtistPage" attributes="model tracks albums client">
+	<template>
+		<style>
+#toolbar {
+	background-color: #db6835;
+	color: white;
+	background-size: cover;
+	background-position: center center;
+	height: 300px;
+	-webkit-transition: 300ms all;
+	-moz-transition: 300ms all;
+	transition: 300ms all;
+}
+#toolbar.no-cover {
+	height: 128px;
+	background-image: none !important;
+}
+#toolbar.condensed {
+	height: 128px;
+}
+paper-tabs::shadow #selectionBar {
+	background-color: white;
+}
+		</style>
+		<div fit layout vertical>
+			<core-toolbar id="toolbar" class="no-cover condensed">
+				<paper-icon-button icon="arrow-back" on-click="{{goBack}}"></paper-icon-button>
+
+				<span flex>{{model.artist}}</span>
+
+				<paper-tabs id="albumTabs" selected="{{selectedTab}}" class="bottom fit" noink>
+					<paper-tab>INFOS</paper-tab>
+					<paper-tab>ALBUMS</paper-tab>
+					<paper-tab>TRACKS</paper-tab>
+				</paper-tabs>
+			</core-toolbar>
+
+			<core-pages id="albumPages" selected="{{selectedTab}}" flex>
+				<div>Not implemented.</div>
+				<div fit>
+					<core-list id="albums" data="{{albums}}" selectionEnabled fit grid width="150" height="150">
+						<template>
+							<library-album class="{{ {selected: selected} | tokenList }}" model="{{model}}"></library-album>
+						</template>
+					</core-list>
+				</div>
+				<div fit>
+					<core-list id="tracks" data="{{tracks}}" selectionEnabled fit>
+						<template>
+							<library-track class="{{ {selected: selected} | tokenList }}" model="{{model}}"></library-track>
+						</template>
+					</core-list>
+				</div>
+			</core-pages>
+
+			<now-playing-toolbar id="playingToolbar"></now-playing-toolbar>
+		</div>
+	</template>
+	<script>
+	Polymer('artist-page', {
+		selectedTab: 1,
+		model: { artist: '' },
+		tracks: [],
+		albums: [],
+		goBack: function () {
+			clementine.goBack();
+		},
+		tracksChanged: function (oldValue, newValue) {
+			this.$.tracks.tracks = newValue;
+		},
+		albumsChanged: function (oldValue, newValue) {
+			this.$.tracks.albumsChanged = newValue;
+		},
+		clientChanged: function () {
+			this.$.playingToolbar.client = this.client;
+		},
+		modelChanged: function () {
+			var that = this;
+
+			this.$.toolbar.classList.add('no-cover');
+			clementine.covers.search({
+				artist: this.model.artist,
+				size: 'mega'
+			}, function (err, url) {
+				if (url) {
+					that.$.toolbar.style.backgroundImage = 'url("'+url+'")';
+					that.$.toolbar.classList.remove('no-cover');
+				}
 			});
+		}
+	});
+	</script>
+</polymer-element>
+
+<polymer-element name="library-page" constructor="LibraryPage" attributes="client">
+	<template>
+		<style>
+/* TODO: global style */
+core-toolbar {
+	background-color: #db6835;
+	color: white;
+}
+paper-tabs::shadow #selectionBar {
+	background-color: white;
+}
+paper-dropdown {
+    color: black;
+}
+		</style>
+		<div fit layout vertical>
+			<core-toolbar class="medium-tall">
+				<!--<paper-icon-button id="navicon" icon="menu"></paper-icon-button>-->
+				<span flex>Clementine</span>
+				<paper-icon-button id="refreshLibraryBtn" icon="cached"></paper-icon-button>
+				<paper-menu-button>
+					<paper-icon-button icon="more-vert"></paper-icon-button>
+					<paper-dropdown class="dropdown" halign="right">
+						<div class="menu">
+							<paper-item>Share</paper-item>
+							<paper-item>Settings</paper-item>
+							<paper-item id="aboutBtn">Help</paper-item>
+						</div>
+					</paper-dropdown>
+				</paper-menu-button>
+
+				<paper-tabs selected="{{selectedTab}}" class="bottom fit" noink>
+					<paper-tab>RECENT</paper-tab>
+					<paper-tab>ARTISTS</paper-tab>
+					<paper-tab>ALBUMS</paper-tab>
+					<paper-tab>TRACKS</paper-tab>
+				</paper-tabs>
+			</core-toolbar>
+
+			<core-pages selected="{{selectedTab}}" flex>
+				<div>Not implemented.</div>
+				<div style="overflow: auto;" fit>
+					<core-list id="artists" selectionEnabled fit grid width="150" height="150">
+						<template>
+							<library-artist model="{{model}}"></library-artist>
+						</template>
+					</core-list>
+				</div>
+				<div style="overflow: auto;" fit>
+					<core-list id="albums" selectionEnabled fit grid width="150" height="150">
+						<template>
+							<library-album model="{{model}}"></library-album>
+						</template>
+					</core-list>
+				</div>
+				<div style="overflow: auto;" fit>
+					<core-list id="tracks" selectionEnabled fit>
+						<template>
+							<library-track class="{{ {selected: selected} | tokenList }}" model="{{model}}"></library-track>
+						</template>
+					</core-list>
+				</div>
+			</core-pages>
+
+			<now-playing-toolbar id="playingToolbar"></now-playing-toolbar>
+		</div>
+
+		<paper-toast id="loadingLibraryToast" text="Loading library..." duration="9999" autoCloseDisabled></paper-toast>
+	</template>
+	<script>
+	Polymer('library-page', {
+		selectedTab: 2,
+		clientChanged: function () {
+			this.$.playingToolbar.client = this.client;
+		},
+		ready: function () {
+			var that = this;
+			this.$.refreshLibraryBtn.addEventListener('click', function () {
+				that.reload();
+			});
+			this.$.aboutBtn.addEventListener('click', function () {
+				window.open('https://github.com/emersion/clementine-remote-web');
+			});
+		},
+		load: function (reload) {
+			var client = this.client;
+			var that = this;
+
+			var libraryLoaded = function () {
+				if (reload) {
+					that.$.albums.data = null;
+					that.$.tracks.data = null;
+				}
+
+				switch (that.selectedTab) {
+					case 0:
+						break;
+					case 1:
+						if (!that.$.artists.data) {
+							client.library.db.exec('SELECT artist, COUNT(*) AS tracks_nbr FROM songs GROUP BY artist ORDER BY artist', function (res) {
+								that.$.artists.data = res.results[0].values;
+								that.$.loadingLibraryToast.dismiss();
+							});
+							that.$.loadingLibraryToast.show();
+						}
+						break;
+					case 2:
+						if (!that.$.albums.data) {
+							client.library.db.exec('SELECT album, artist, COUNT(*) AS tracks_nbr FROM songs GROUP BY album ORDER BY album', function (res) {
+								that.$.albums.data = res.results[0].values;
+								that.$.loadingLibraryToast.dismiss();
+							});
+							that.$.loadingLibraryToast.show();
+						}
+						break;
+					case 3:
+						if (!that.$.tracks.data) {
+							client.library.db.exec('SELECT title, album, artist, CAST(filename AS TEXT) AS filename FROM songs ORDER BY title', function (res) {
+								that.$.tracks.data = res.results[0].values;
+								that.$.loadingLibraryToast.dismiss();
+							});
+							that.$.loadingLibraryToast.show();
+						}
+						break;
+				}
+			};
+
+			if (client.library.db.opened && !reload) {
+				libraryLoaded();
+			} else if (client.library.isCached() && !reload) {
+				client.library.openFromCache(function () {
+					that.$.loadingLibraryToast.dismiss();
+					libraryLoaded();
+				});
+				that.$.loadingLibraryToast.show();
+			} else {
+				client.once('library', function (library) {
+					that.$.loadingLibraryToast.dismiss();
+					libraryLoaded();
+				});
+				client.get_library();
+				that.$.loadingLibraryToast.show();
+			}
+		},
+		selectedTabChanged: function () {
+			this.load();
+		},
+		reload: function () {
+			return this.load(true);
 		}
 	});
 	</script>
@@ -305,53 +668,11 @@ core-toolbar #title {
 
 <core-pages id="appPages" selected="0" fit>
 
-<div id="pageMain" fit layout vertical>
-	<core-toolbar class="medium-tall">
-		<!--<paper-icon-button id="navicon" icon="menu"></paper-icon-button>-->
-		<span flex>Clementine</span>
-		<paper-icon-button id="refreshLibraryBtn" icon="cached"></paper-icon-button>
-		<paper-menu-button>
-			<paper-icon-button icon="more-vert"></paper-icon-button>
-			<paper-dropdown class="dropdown" halign="right">
-				<div class="menu">
-					<paper-item>Share</paper-item>
-					<paper-item>Settings</paper-item>
-					<paper-item>Help</paper-item>
-				</div>
-			</paper-dropdown>
-		</paper-menu-button>
-
-		<paper-tabs id="mainTabs" selected="2" class="bottom fit" noink>
-			<paper-tab>RECENT</paper-tab>
-			<paper-tab>ARTISTS</paper-tab>
-			<paper-tab>ALBUMS</paper-tab>
-			<paper-tab>TRACKS</paper-tab>
-		</paper-tabs>
-	</core-toolbar>
-
-	<core-pages id="mainPages" selected="2" flex>
-		<div>Not implemented.</div>
-		<div>Not implemented.</div>
-		<div style="overflow: auto;" fit>
-			<core-list id="mainAlbums" selectionEnabled fit grid width="150" height="150">
-				<template>
-					<library-album model="{{model}}"></library-album>
-				</template>
-			</core-list>
-		</div>
-		<div style="overflow: auto;" fit>
-			<core-list id="mainTracks" selectionEnabled fit>
-				<template>
-					<library-track class="{{ {selected: selected} | tokenList }}" model="{{model}}"></library-track>
-				</template>
-			</core-list>
-		</div>
-	</core-pages>
-
-	<now-playing-toolbar id="mainPlayingToolbar"></now-playing-toolbar>
-</div>
+<library-page id="pageLibrary" fit></library-page>
 
 <album-page id="pageAlbum" fit></album-page>
+
+<artist-page id="pageArtist" fit></artist-page>
 
 <div id="pagePlaying" fit layout vertical>
 	<core-toolbar>
@@ -366,7 +687,7 @@ core-toolbar #title {
 				<div class="menu">
 					<paper-item>Share</paper-item>
 					<paper-item>Settings</paper-item>
-					<paper-item>Help</paper-item>
+					<paper-item>About</paper-item>
 				</div>
 			</paper-dropdown>
 		</paper-menu-button>
@@ -418,8 +739,6 @@ core-toolbar #title {
 </div>
 
 </core-pages>
-
-<paper-toast id="downloadingLibraryToast" text="Loading library..." duration="9999" autoCloseDisabled></paper-toast>
 
 <paper-action-dialog id="connectDialog" transition="core-transition-center" backdrop heading="Clementine" autoclosedisabled>
 	<p>Hello</p>
